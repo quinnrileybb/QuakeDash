@@ -33,7 +33,7 @@ st.success("Welcome to QuakeDash.")
 # -------------------------
 # Sidebar Dropdowns for Team/Position/Player Selection
 # -------------------------
-teams = ['DAR_GRE', 'HAR_CRI', 'PRI_TIG', 'YAL_BUL', 'PEN_QUA', 'COL_LION', 'COR_BRE', 'BRO_BEA']
+teams = ['PEN_QUA']
 col1, col2, col3 = st.columns(3)
 with col1:
     selected_team = st.selectbox("Select Team", teams)
