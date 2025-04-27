@@ -550,22 +550,26 @@ if position == "Batter":
             # Apply the row filter and then the column filter to get the cell data.
                 df_cell = col_filters[col_name](row_func(df_player))
             
-            
-            # Plot the KDE heatmap if data is available; otherwise, write "No Data"
-                if not df_cell.empty:
+                df_plot = df_cell[['PlateLocSide','PlateLocHeight']].dropna().astype(float)
+
+# 2) guard against too-few points or zero variance
+                if df_plot.shape[0] < 10 \
+                    or df_plot['PlateLocSide'].nunique() < 2 \
+                    or df_plot['PlateLocHeight'].nunique() < 2:
+                    ax.text(0.5, 0.5, "No Data", ha='center', va='center', transform=ax.transAxes)
+                else:
+    # 3) safe call to kdeplot
                     sns.kdeplot(
-                        data=df_cell,
+                        data=df_plot,
                         x="PlateLocSide",
                         y="PlateLocHeight",
                         ax=ax,
-                        fill=True,        # or shade=True if you’re on 0.10
+                        fill=True,
                         cmap="Reds",
                         bw_adjust=0.5,
-                        levels=5,         # optional — controls contour lines
-                        thresh=0.05       # optional — drops very low-density regions
+                        levels=5,
+                        thresh=0.05,
                     )
-                else:
-                    ax.text(0.5, 0.5, "No Data", ha="center", va="center", transform=ax.transAxes)
             
             # Draw the strike zone rectangle (adjust the boundaries as needed)
                 sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
