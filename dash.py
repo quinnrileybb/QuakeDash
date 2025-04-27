@@ -1219,7 +1219,7 @@ else:
 
             # Plot the KDE heatmap if data is available; otherwise, display "No Data"
                     # 1) clean & pull out just the two columns
-                    # 1) pull & clean just the two columns
+                    # 2) no pitches at all?
                     df_plot = (
                         df_filtered[['PlateLocSide','PlateLocHeight']]
                         .dropna()
@@ -1228,7 +1228,6 @@ else:
 
                     min_points = 3
 
-# 2) no pitches at all?
                     if df_plot.shape[0] == 0:
                         ax.text(
                             0.5, 0.5, "No Data",
@@ -1236,7 +1235,6 @@ else:
                             transform=ax.transAxes
                         )
 
-# 3) not enough for a full KDE (or zero variance)? scatter red dots
                     elif (
                         df_plot.shape[0] < min_points
                         or df_plot['PlateLocSide'].nunique() < 2
@@ -1251,30 +1249,28 @@ else:
                             alpha=0.8
                         )
 
-# 4) otherwise, try the KDE—if it still errors, fall back to scatter
                     else:
                         try:
                             sns.kdeplot(
-                                data=df_plot,
-                                x="PlateLocSide",
-                                y="PlateLocHeight",
-                                ax=ax,
-                                fill=True,
-                                cmap="Reds",
-                                bw_adjust=0.5,
-                                levels=5,
-                                thresh=0.05,
-                            )
-                        except ValueError:
-        # fallback if contour generation fails
-                            ax.scatter(
-                                df_plot['PlateLocSide'],
-                                df_plot['PlateLocHeight'],
-                                c='red',
-                                s=30,
-                                marker='o',
-                                alpha=0.8
-                            )
+                                    data=df_plot,
+                                    x="PlateLocSide",
+                                    y="PlateLocHeight",
+                                    ax=ax,
+                                    fill=True,
+                                    cmap="Reds",
+                                    bw_adjust=0.5,
+                                    levels=5,
+                                    thresh=0.05,
+                                )
+                            except ValueError:
+                                ax.scatter(
+                                    df_plot['PlateLocSide'],
+                                    df_plot['PlateLocHeight'],
+                                    c='red',
+                                    s=30,
+                                    marker='o',
+                                    alpha=0.8
+                                )
 
 # 5) now redraw your strike zone and clean up the axes
                     sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
