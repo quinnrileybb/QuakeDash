@@ -1219,12 +1219,16 @@ else:
 
             # Plot the KDE heatmap if data is available; otherwise, display "No Data"
                     # 1) clean & pull out just the two columns
-                    df_plot = df_filtered[['PlateLocSide','PlateLocHeight']] \
-                             .dropna().astype(float)
+                    # 1) pull & clean just the two columns
+                    df_plot = (
+                        df_filtered[['PlateLocSide','PlateLocHeight']]
+                        .dropna()
+                        .astype(float)
+                    )
 
                     min_points = 3
 
-# 2) no points? label “No Data”
+# 2) no pitches at all?
                     if df_plot.shape[0] == 0:
                         ax.text(
                             0.5, 0.5, "No Data",
@@ -1232,46 +1236,55 @@ else:
                             transform=ax.transAxes
                         )
 
-# 3) too few / zero-variance? draw red dots
-                    elif (df_plot.shape[0] < min_points
-                          or df_plot['PlateLocSide'].nunique() < 2
-                          or df_plot['PlateLocHeight'].nunique() < 2):
+# 3) not enough for a full KDE (or zero variance)? scatter red dots
+                    elif (
+                        df_plot.shape[0] < min_points
+                        or df_plot['PlateLocSide'].nunique() < 2
+                        or df_plot['PlateLocHeight'].nunique() < 2
+                    ):
                         ax.scatter(
                             df_plot['PlateLocSide'],
                             df_plot['PlateLocHeight'],
-                            c='red', s=30, marker='o', alpha=0.8
+                            c='red',
+                            s=30,
+                            marker='o',
+                            alpha=0.8
                         )
 
-# 4) otherwise do the full KDE
+# 4) otherwise, try the KDE—if it still errors, fall back to scatter
                     else:
-                        sns.kdeplot(
-                            data=df_plot,
-                            x="PlateLocSide",
-                            y="PlateLocHeight",
-                            ax=ax,
-                            fill=True,
-                            cmap="Reds",
-                            bw_adjust=0.5,
-                            levels=5,
-                            thresh=0.05,
-                        )
+                        try:
+                            sns.kdeplot(
+                                data=df_plot,
+                                x="PlateLocSide",
+                                y="PlateLocHeight",
+                                ax=ax,
+                                fill=True,
+                                cmap="Reds",
+                                bw_adjust=0.5,
+                                levels=5,
+                                thresh=0.05,
+                            )
+                        except ValueError:
+        # fallback if contour generation fails
+                            ax.scatter(
+                                df_plot['PlateLocSide'],
+                                df_plot['PlateLocHeight'],
+                                c='red',
+                                s=30,
+                                marker='o',
+                                alpha=0.8
+                            )
 
-# … then immediately continue with drawing your strike zone, titles, axes cleanup …
-
-            # Draw the strike zone rectangle (adjust if needed)
+# 5) now redraw your strike zone and clean up the axes
                     sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
                     sz_y = [1.5, 1.5, 3.5, 3.5, 1.5]
                     ax.plot(sz_x, sz_y, color="black", linewidth=2)
-
-            # Set the axis limits
                     ax.set_xlim(-2.5, 2.5)
                     ax.set_ylim(0.5, 5)
-
-            # Remove any axis tick labels or axis labels
                     ax.set_xticks([])
                     ax.set_yticks([])
-                    ax.set_xlabel("")
-                    ax.set_ylabel("")
+
 
             # For the top row, display the pitch type label as the subplot title
                     ax.set_title(pitch, fontsize=10)
