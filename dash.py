@@ -1214,14 +1214,13 @@ else:
                     usage_percent = (count_cat / total_cat * 100) if total_cat > 0 else 0
 
             # Display usage percentage above the heatmap
-                    usage_text = f"{usage_percent:.0f}%"
-                    ax.text(0.5, 0.95, usage_text, transform=ax.transAxes, ha="center", va="top", fontsize=10, fontweight="bold")
+                
 
             # Plot the KDE heatmap if data is available; otherwise, display "No Data"
                     # 1) clean & pull out just the two columns
                     # 2) no pitches at all?
                     df_plot = (
-                        df_cell[['PlateLocSide','PlateLocHeight']]
+                        df_filtered[['PlateLocSide','PlateLocHeight']]
                         .dropna()
                         .astype(float)
                     )
