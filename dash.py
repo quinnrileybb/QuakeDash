@@ -557,7 +557,7 @@ if position == "Batter":
 # 3) scatter-fallback or KDE
                 if df_plot.shape[0] == 0:
     # truly no points
-                    ax.text(0.5, 0.5, "No Data",
+                    ax.text(0.5, 0.5, "Not Data",
                         ha='center', va='center', transform=ax.transAxes)
                 elif df_plot.shape[0] < min_points \
                      or df_plot['PlateLocSide'].nunique() < 1 \
@@ -1218,19 +1218,45 @@ else:
                     ax.text(0.5, 0.95, usage_text, transform=ax.transAxes, ha="center", va="top", fontsize=10, fontweight="bold")
 
             # Plot the KDE heatmap if data is available; otherwise, display "No Data"
-                    if not df_filtered.empty:
-                        sns.kdeplot(
-                            x=df_filtered['PlateLocSide'],
-                            y=df_filtered['PlateLocHeight'],
-                            ax=ax,
-                            fill=True,
-                            cmap="Reds",
-                            bw_adjust=0.5,
-                            levels=5,
-                            thresh=0.05,
-                        )
-                    else:
-                        ax.text(0.5, 0.5, "No Data", ha="center", va="center", transform=ax.transAxes)
+                    # 1) clean & pull out just the two columns
+                df_plot = df_filtered[['PlateLocSide','PlateLocHeight']] \
+                             .dropna().astype(float)
+
+                min_points = 3
+
+# 2) no points? label “No Data”
+                if df_plot.shape[0] == 0:
+                    ax.text(
+                        0.5, 0.5, "No Data",
+                        ha='center', va='center',
+                        transform=ax.transAxes
+                    )
+
+# 3) too few / zero-variance? draw red dots
+                elif (df_plot.shape[0] < min_points
+                      or df_plot['PlateLocSide'].nunique() < 2
+                      or df_plot['PlateLocHeight'].nunique() < 2):
+                    ax.scatter(
+                        df_plot['PlateLocSide'],
+                        df_plot['PlateLocHeight'],
+                        c='red', s=30, marker='o', alpha=0.8
+                    )
+
+# 4) otherwise do the full KDE
+                else:
+                    sns.kdeplot(
+                        data=df_plot,
+                        x="PlateLocSide",
+                        y="PlateLocHeight",
+                        ax=ax,
+                        fill=True,
+                        cmap="Reds",
+                        bw_adjust=0.5,
+                        levels=5,
+                        thresh=0.05,
+                    )
+
+# … then immediately continue with drawing your strike zone, titles, axes cleanup …
 
             # Draw the strike zone rectangle (adjust if needed)
                     sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
