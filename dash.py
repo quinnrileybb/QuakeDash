@@ -1221,7 +1221,7 @@ else:
                     # 1) clean & pull out just the two columns
                     # 2) no pitches at all?
                     df_plot = (
-                        df_filtered[['PlateLocSide','PlateLocHeight']]
+                        df_cell[['PlateLocSide','PlateLocHeight']]
                         .dropna()
                         .astype(float)
                     )
