@@ -552,7 +552,7 @@ if position == "Batter":
                 df_plot = df_cell[['PlateLocSide','PlateLocHeight']].dropna().astype(float)
 
 # 2) define your minimum for a true KDE
-                min_points = 3
+                min_points = 2
 
 # 3) scatter-fallback or KDE
                 if df_plot.shape[0] == 0:
