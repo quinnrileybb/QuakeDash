@@ -1212,13 +1212,12 @@ else:
                     total_cat = category_totals[cat_name]
                     count_cat = len(df_filtered)
                     usage_percent = (count_cat / total_cat * 100) if total_cat > 0 else 0
-
-            # Display usage percentage above the heatmap
                 
 
             # Plot the KDE heatmap if data is available; otherwise, display "No Data"
                     # 1) clean & pull out just the two columns
                     # 2) no pitches at all?
+                    df_cell = col_filters[col_name]( row_func(df_player) )
                     df_plot = (
                         df_filtered[['PlateLocSide','PlateLocHeight']]
                         .dropna()
@@ -1237,8 +1236,7 @@ else:
                     elif (
                         df_plot.shape[0] < min_points
                         or df_plot['PlateLocSide'].nunique() < 2
-                        or df_plot['PlateLocHeight'].nunique() < 2
-                    ):
+                        or df_plot['PlateLocHeight'].nunique() < 2):
                         ax.scatter(
                             df_plot['PlateLocSide'],
                             df_plot['PlateLocHeight'],
