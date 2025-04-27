@@ -1261,13 +1261,13 @@ else:
                                 )
                         except ValueError:
                             ax.scatter(
-                                    df_plot['PlateLocSide'],
-                                    df_plot['PlateLocHeight'],
-                                    c='red',
-                                    s=30,
-                                    marker='o',
-                                    alpha=0.8
-                                )
+                                df_plot['PlateLocSide'],
+                                df_plot['PlateLocHeight'],
+                                c='red',
+                                s=30,
+                                marker='o',
+                                alpha=0.8
+                            )
 
 # 5) now redraw your strike zone and clean up the axes
                     sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
