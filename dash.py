@@ -1211,6 +1211,7 @@ else:
                             fill=True,
                             cmap="Reds",
                             bw_adjust=0.5,
+                            levels=5,
                             thresh=0.05,
                         )
                     else:
