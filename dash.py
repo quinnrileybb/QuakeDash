@@ -555,14 +555,21 @@ if position == "Batter":
                 min_points = 3
 
 # 3) scatter-fallback or KDE
-                if df_plot.shape[0] < min_points or \
-                   df_plot['PlateLocSide'].nunique() < 2 or \
-                    df_plot['PlateLocHeight'].nunique() < 2:
+                if df_plot.shape[0] == 0:
+    # truly no points
+                    ax.text(0.5, 0.5, "No Data",
+                        ha='center', va='center', transform=ax.transAxes)
+                elif df_plot.shape[0] < min_points \
+                     or df_plot['PlateLocSide'].nunique() < 2 \
+                     or df_plot['PlateLocHeight'].nunique() < 2:
+    # not enough for KDE, but at least one point → plot raw red dots
                     ax.scatter(
                         df_plot['PlateLocSide'],
                         df_plot['PlateLocHeight'],
-                        s=10,
-                        alpha=0.7
+                        c='red',
+                        s=30,
+                        marker='o',
+                        alpha=0.8
                     )
                 else:
                     sns.kdeplot(
