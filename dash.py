@@ -554,13 +554,15 @@ if position == "Batter":
             # Plot the KDE heatmap if data is available; otherwise, write "No Data"
                 if not df_cell.empty:
                     sns.kdeplot(
-                        x=df_cell['PlateLocSide'],
-                        y=df_cell['PlateLocHeight'],
+                        data=df_cell,
+                        x="PlateLocSide",
+                        y="PlateLocHeight",
                         ax=ax,
-                        fill=True,
+                        fill=True,        # or shade=True if you’re on 0.10
                         cmap="Reds",
                         bw_adjust=0.5,
-                        thresh=0.05,
+                        levels=5,         # optional — controls contour lines
+                        thresh=0.05       # optional — drops very low-density regions
                     )
                 else:
                     ax.text(0.5, 0.5, "No Data", ha="center", va="center", transform=ax.transAxes)
