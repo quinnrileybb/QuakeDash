@@ -548,17 +548,23 @@ if position == "Batter":
             for col_idx, col_name in enumerate(col_names):
                 ax = axs[row_idx, col_idx]
             # Apply the row filter and then the column filter to get the cell data.
-                df_cell = col_filters[col_name](row_func(df_player))
-            
+                # 1) prepare and clean
                 df_plot = df_cell[['PlateLocSide','PlateLocHeight']].dropna().astype(float)
 
-# 2) guard against too-few points or zero variance
-                if df_plot.shape[0] < 1 \
-                    or df_plot['PlateLocSide'].nunique() < 1 \
-                    or df_plot['PlateLocHeight'].nunique() < 1:
-                    ax.text(0.5, 0.5, "No Data", ha='center', va='center', transform=ax.transAxes)
+# 2) define your minimum for a true KDE
+                min_points = 3
+
+# 3) scatter-fallback or KDE
+                if df_plot.shape[0] < min_points or \
+                   df_plot['PlateLocSide'].nunique() < 2 or \
+                    df_plot['PlateLocHeight'].nunique() < 2:
+                    ax.scatter(
+                        df_plot['PlateLocSide'],
+                        df_plot['PlateLocHeight'],
+                        s=10,
+                        alpha=0.7
+                    )
                 else:
-    # 3) safe call to kdeplot
                     sns.kdeplot(
                         data=df_plot,
                         x="PlateLocSide",
@@ -570,20 +576,16 @@ if position == "Batter":
                         levels=5,
                         thresh=0.05,
                     )
-            
-            # Draw the strike zone rectangle (adjust the boundaries as needed)
+
+# 4) then redraw your strike zone and axis cleanup as before
                 sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
                 sz_y = [1.5, 1.5, 3.5, 3.5, 1.5]
                 ax.plot(sz_x, sz_y, color="black", linewidth=2)
-            
-            # Set axis limits and remove ticks/labels for clarity
                 ax.set_xlim(-2.5, 2.5)
                 ax.set_ylim(0.5, 5)
                 ax.set_xticks([])
                 ax.set_yticks([])
-                ax.set_xlabel("")
-                ax.set_ylabel("")
-            
+
            
                 ax.set_title(col_name, fontsize=10)
             
