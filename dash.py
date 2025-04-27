@@ -1261,8 +1261,8 @@ else:
                                     levels=5,
                                     thresh=0.05,
                                 )
-                            except ValueError:
-                                ax.scatter(
+                        except ValueError:
+                            ax.scatter(
                                     df_plot['PlateLocSide'],
                                     df_plot['PlateLocHeight'],
                                     c='red',
