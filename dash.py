@@ -553,7 +553,7 @@ if position == "Batter":
                 df_plot = df_cell[['PlateLocSide','PlateLocHeight']].dropna().astype(float)
 
 # 2) guard against too-few points or zero variance
-                if df_plot.shape[0] < 10 \
+                if df_plot.shape[0] < 5 \
                     or df_plot['PlateLocSide'].nunique() < 2 \
                     or df_plot['PlateLocHeight'].nunique() < 2:
                     ax.text(0.5, 0.5, "No Data", ha='center', va='center', transform=ax.transAxes)
