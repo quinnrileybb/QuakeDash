@@ -544,12 +544,20 @@ if position == "Batter":
             axs = np.expand_dims(axs, axis=1)
     
     # Loop over each row (event filter) and each column (pitch category)
-        for row_idx, (row_name, row_func) in enumerate(row_filters.items()):
-            for col_idx, col_name in enumerate(col_names):
-                ax = axs[row_idx, col_idx]
-            # Apply the row filter and then the column filter to get the cell data.
-                # 1) prepare and clean
-                df_plot = df_cell[['PlateLocSide','PlateLocHeight']].dropna().astype(float)
+        # inside for row_idx, (row_name, row_func) …
+        for col_idx, col_name in enumerate(col_names):
+            ax = axs[row_idx, col_idx]
+
+    # 1) apply the row filter
+            df_row  = row_func(df_player)
+
+    # 2) apply the column filter
+            df_cell = col_filters[col_name](df_row)
+
+    # 3) now df_cell exists
+            df_plot = df_cell[['PlateLocSide','PlateLocHeight']].dropna().astype(float)
+
+
 
 # 2) define your minimum for a true KDE
                 min_points = 1
