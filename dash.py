@@ -1163,93 +1163,103 @@ else:
         # Heatmaps Tab
         # -------------------------
         with tabs[1]:
-            st.header("Heatmaps")
-            st.markdown("#### Pitch Heatmaps by Category")
+        st.header("Heatmaps")
+        st.markdown("#### Pitch Location Heatmaps by Category (Top 5 Pitch Types)")
 
-    # Define filter functions for each category.
-            category_filters = {
-                "Overall": lambda df: df,
-                "Whiffs": lambda df: df[df["PitchCall"] == "StrikeSwinging"],
-                "Hard Hit": lambda df: df[(df["PitchCall"] == "InPlay") & (df["ExitSpeed"] > 95)],
-                "Softly Hit": lambda df: df[(df["PitchCall"] == "InPlay") & (df["ExitSpeed"] <= 95)],
-                "RHH": lambda df: df[df["BatterSide"] == "Right"],
-                "LHH": lambda df: df[df["BatterSide"] == "Left"],
-                "RHH 0-0": lambda df: df[(df["BatterSide"] == "Right") & (df["CountSituation"] == "0-0")],
-                "LHH 0-0": lambda df: df[(df["BatterSide"] == "Left") & (df["CountSituation"] == "0-0")],
-                "RHH second pitch": lambda df: df[(df["BatterSide"] == "Right") & (df["second_pitch"] == True)],
-                "LHH second pitch": lambda df: df[(df["BatterSide"] == "Left") & (df["second_pitch"] == True)],
-                "RHH ahead": lambda df: df[(df["BatterSide"] == "Right") & (df["CountSituation"] == "Ahead")],
-                "LHH ahead": lambda df: df[(df["BatterSide"] == "Left") & (df["CountSituation"] == "Ahead")],
-                "RHH behind": lambda df: df[(df["BatterSide"] == "Right") & (df["CountSituation"] == "Behind")],
-                "LHH behind": lambda df: df[(df["BatterSide"] == "Left") & (df["CountSituation"] == "Behind")],
-                "RHH 2strk": lambda df: df[(df["BatterSide"] == "Right") & (df["CountSituation"] == "2Strk")],
-                "LHH 2strk": lambda df: df[(df["BatterSide"] == "Left") & (df["CountSituation"] == "2Strk")],
-            }
+    # 1) Your row categories & filters
+        row_filters = {
+            "Overall":       lambda df: df,
+            "Whiffs":        lambda df: df[df["PitchCall"] == "StrikeSwinging"],
+            "Hard Hit":      lambda df: df[(df["PitchCall"] == "InPlay") & (df["ExitSpeed"] > 95)],
+            "Soft Hit":      lambda df: df[(df["PitchCall"] == "InPlay") & (df["ExitSpeed"] <= 95)],
+            "RHH":           lambda df: df[df["BatterSide"] == "Right"],
+            "LHH":           lambda df: df[df["BatterSide"] == "Left"],
+            "RHH 0-0":       lambda df: df[(df["BatterSide"] == "Right") & (df["CountSituation"] == "0-0")],
+            "LHH 0-0":       lambda df: df[(df["BatterSide"] == "Left")  & (df["CountSituation"] == "0-0")],
+            "RHH 2nd":       lambda df: df[(df["BatterSide"] == "Right") & (df["second_pitch"])],
+            "LHH 2nd":       lambda df: df[(df["BatterSide"] == "Left")  & (df["second_pitch"])],
+            "RHH Ahead":     lambda df: df[(df["BatterSide"] == "Right") & (df["CountSituation"] == "Ahead")],
+            "LHH Ahead":     lambda df: df[(df["BatterSide"] == "Left")  & (df["CountSituation"] == "Ahead")],
+            "RHH Behind":    lambda df: df[(df["BatterSide"] == "Right") & (df["CountSituation"] == "Behind")],
+            "LHH Behind":    lambda df: df[(df["BatterSide"] == "Left")  & (df["CountSituation"] == "Behind")],
+            "RHH 2Strk":     lambda df: df[(df["BatterSide"] == "Right") & (df["CountSituation"] == "2Strk")],
+            "LHH 2Strk":     lambda df: df[(df["BatterSide"] == "Left")  & (df["CountSituation"] == "2Strk")]
+    }
 
-    # Compute totals for each category from the entire player dataset.
+    # 2) Top 5 pitch types by overall usage
+        top5 = df_player["AutoPitchType"].value_counts().index.tolist()[:5]
 
-            category_totals = {cat: len(fn(df_player)) for cat, fn in category_filters.items()}
-            ordered_pitch_types = df_player["AutoPitchType"].value_counts().index.tolist()
+    # 3) Fixed contour levels for uniformity
+        contour_levels = [0.01, 0.05, 0.1, 0.2, 0.4]
 
-    # 3) Set up subplot grid
-            n_rows, n_cols = len(category_filters), len(ordered_pitch_types)
-            fig, axs = plt.subplots(n_rows, n_cols,
-                                    figsize=(n_cols * 3, n_rows * 3),
-                                    constrained_layout=True)
-            if n_rows == 1: axs = np.expand_dims(axs, axis=0)
-            if n_cols == 1: axs = np.expand_dims(axs, axis=1)
+    # 4) Strike zone outline
+        sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
+        sz_y = [ 1.5 ,  1.5 ,  3.5 ,  3.5 ,  1.5 ]
 
-    # 4) Loop through each category (row) & pitch type (col)
-            for row_idx, (cat_name, filter_fn) in enumerate(category_filters.items()):
-                for col_idx, pitch in enumerate(ordered_pitch_types):
-                    ax = axs[row_idx, col_idx]
+    # 5) Build subplot grid: rows = len(row_filters), cols = 5
+        n_rows = len(row_filters)
+        n_cols = 5
+        fig, axs = plt.subplots(n_rows, n_cols,
+                                figsize=(n_cols * 3, n_rows * 3),
+                                constrained_layout=True)
+    # ensure 2D indexing
+        if n_rows == 1: axs = axs[np.newaxis, :]
+        if n_cols == 1: axs = axs[:, np.newaxis]
 
-            # filter down to this pitch & category
-                    df_pitch    = df_player[df_player["AutoPitchType"] == pitch]
-                    df_filtered = filter_fn(df_pitch)
+    # 6) Loop rows × cols
+        for i, (row_name, row_fn) in enumerate(row_filters.items()):
+            for j in range(n_cols):
+                ax = axs[i, j]
 
-            # pull just the two columns
-                    df_plot = df_filtered[["PlateLocSide","PlateLocHeight"]].dropna().astype(float)
-
-            # only KDE if ≥2 points & ≥2 unique x & y
-                    min_pts = 3
-                if df_plot.shape[0] == 0:
-                    ax.text(0.5, 0.5, "No Data", ha="center", va="center", transform=ax.transAxes)
-                elif (
-                    df_plot.shape[0] < min_pts or
-                    df_plot["PlateLocSide"].nunique() < 3 or
-                    df_plot["PlateLocHeight"].nunique() < 3
-                ):
-                    ax.scatter(df_plot["PlateLocSide"],
-                               df_plot["PlateLocHeight"],
-                               c="red", s=30, marker="o", alpha=0.8)
-                else:
-                    sns.kdeplot(
-                        data=df_plot,
-                        x="PlateLocSide", y="PlateLocHeight",
-                        fill=True, cmap="Reds",
-                        bw_adjust=0.5, levels=5, thresh=0.05,
-                        ax=ax
+                if j < len(top5):
+                    pt = top5[j]
+                # apply row filter then pitch‐type filter
+                    df_cat = row_fn(df_player)
+                    df_pt  = df_cat[df_cat["AutoPitchType"] == pt]
+                    df_plot = (
+                        df_pt[["PlateLocSide","PlateLocHeight"]]
+                        .dropna()
+                        .astype(float)
                     )
 
-            # redraw strike zone
-                sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
-                sz_y = [ 1.5 ,  1.5 ,  3.5 ,  3.5 ,  1.5 ]
+                # fallback logic
+                    if len(df_plot) < 2 or \
+                       df_plot["PlateLocSide"].nunique() < 2 or \
+                       df_plot["PlateLocHeight"].nunique() < 2:
+                        ax.text(0.5, 0.5, "No Data",
+                                ha="center", va="center",
+                                transform=ax.transAxes)
+                    else:
+                        sns.kdeplot(
+                            x=df_plot["PlateLocSide"],
+                            y=df_plot["PlateLocHeight"],
+                            fill=True,
+                            levels=contour_levels,
+                            thresh=0.05,
+                            bw_adjust=0.5,
+                            cmap="Reds",
+                            ax=ax
+                        )
+                    ax.set_title(pt, fontsize=10)
+                else:
+                # blank extra columns
+                    ax.axis("off")
+
+            # always draw strike zone & hide ticks
                 ax.plot(sz_x, sz_y, color="black", linewidth=2)
                 ax.set_xlim(-2.5, 2.5)
                 ax.set_ylim(0.5, 5)
                 ax.set_xticks([]); ax.set_yticks([])
 
-            # titles
-                ax.set_title(pitch, fontsize=10)
-                if col_idx == 0:
-                    ax.text(-0.3, 0.5, cat_name,
+            # label row on first column
+                if j == 0:
+                    ax.text(-0.3, 0.5, row_name,
                             transform=ax.transAxes,
                             rotation=0, va="center", ha="center",
                             fontsize=10)
 
-    # 5) Render the figure
-            st.pyplot(fig)
+    # 7) Render
+        st.pyplot(fig)
 
 
 
