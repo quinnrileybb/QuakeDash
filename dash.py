@@ -1188,110 +1188,68 @@ else:
             }
 
     # Compute totals for each category from the entire player dataset.
-            category_totals = {cat: len(func(df_player)) for cat, func in category_filters.items()}
 
-    # Get pitch types ordered by overall usage (most used first)
-            pitch_counts = df_player["AutoPitchType"].value_counts()
-            ordered_pitch_types = pitch_counts.index.tolist()
-    
-            n_categories = len(category_filters)
-            n_pitch_types = len(ordered_pitch_types)
+            category_totals = {cat: len(fn(df_player)) for cat, fn in category_filters.items()}
+            ordered_pitch_types = df_player["AutoPitchType"].value_counts().index.tolist()
 
-    # Create a grid of subplots
-            fig, axs = plt.subplots(n_categories, n_pitch_types, figsize=(n_pitch_types * 3, n_categories * 3), constrained_layout=True)
+    # 3) Set up subplot grid
+            n_rows, n_cols = len(category_filters), len(ordered_pitch_types)
+            fig, axs = plt.subplots(n_rows, n_cols,
+                                    figsize=(n_cols * 3, n_rows * 3),
+                                    constrained_layout=True)
+            if n_rows == 1: axs = np.expand_dims(axs, axis=0)
+            if n_cols == 1: axs = np.expand_dims(axs, axis=1)
 
-    # Ensure axs is a 2D array
-            if n_categories == 1:
-                axs = np.expand_dims(axs, axis=0)
-            if n_pitch_types == 1:
-                axs = np.expand_dims(axs, axis=1)
-
-    # Loop over each category (row) and pitch type (column)
-            for row_idx, (cat_name, filter_func) in enumerate(category_filters.items()):
+    # 4) Loop through each category (row) & pitch type (col)
+            for row_idx, (cat_name, filter_fn) in enumerate(category_filters.items()):
                 for col_idx, pitch in enumerate(ordered_pitch_types):
                     ax = axs[row_idx, col_idx]
-            # Filter data for this pitch type and then by category
-                    df_pitch = df_player[df_player["AutoPitchType"] == pitch]
-                    df_filtered = filter_func(df_pitch)
 
-            # Compute usage percentage for this category & pitch type
-                    total_cat = category_totals[cat_name]
-                    count_cat = len(df_filtered)
-                    usage_percent = (count_cat / total_cat * 100) if total_cat > 0 else 0
-                
+            # filter down to this pitch & category
+                    df_pitch    = df_player[df_player["AutoPitchType"] == pitch]
+                df_filtered = filter_fn(df_pitch)
 
-            # Plot the KDE heatmap if data is available; otherwise, display "No Data"
-                    # 1) clean & pull out just the two columns
-                    # 2) no pitches at all?
-                    df_cell = col_filters[col_name]( row_func(df_player) )
-                    df_plot = (
-                        df_filtered[['PlateLocSide','PlateLocHeight']]
-                        .dropna()
-                        .astype(float)
+            # pull just the two columns
+                df_plot = df_filtered[["PlateLocSide","PlateLocHeight"]].dropna().astype(float)
+
+            # only KDE if ≥2 points & ≥2 unique x & y
+                min_pts = 2
+                if df_plot.shape[0] == 0:
+                    ax.text(0.5, 0.5, "No Data", ha="center", va="center", transform=ax.transAxes)
+                elif (
+                    df_plot.shape[0] < min_pts or
+                    df_plot["PlateLocSide"].nunique() < 2 or
+                    df_plot["PlateLocHeight"].nunique() < 2
+                ):
+                    ax.scatter(df_plot["PlateLocSide"],
+                               df_plot["PlateLocHeight"],
+                               c="red", s=30, marker="o", alpha=0.8)
+                else:
+                    sns.kdeplot(
+                        data=df_plot,
+                        x="PlateLocSide", y="PlateLocHeight",
+                        fill=True, cmap="Reds",
+                        bw_adjust=0.5, levels=5, thresh=0.05,
+                        ax=ax
                     )
 
-                    min_points = 3
+            # redraw strike zone
+                sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
+                sz_y = [ 1.5 ,  1.5 ,  3.5 ,  3.5 ,  1.5 ]
+                ax.plot(sz_x, sz_y, color="black", linewidth=2)
+                ax.set_xlim(-2.5, 2.5)
+                ax.set_ylim(0.5, 5)
+                ax.set_xticks([]); ax.set_yticks([])
 
-                    if df_plot.shape[0] == 0:
-                        ax.text(
-                            0.5, 0.5, "No Data",
-                            ha='center', va='center',
-                            transform=ax.transAxes
-                        )
+            # titles
+                ax.set_title(pitch, fontsize=10)
+                if col_idx == 0:
+                    ax.text(-0.3, 0.5, cat_name,
+                            transform=ax.transAxes,
+                            rotation=0, va="center", ha="center",
+                            fontsize=10)
 
-                    elif (
-                        df_plot.shape[0] < min_points
-                        or df_plot['PlateLocSide'].nunique() < 2
-                        or df_plot['PlateLocHeight'].nunique() < 2):
-                        ax.scatter(
-                            df_plot['PlateLocSide'],
-                            df_plot['PlateLocHeight'],
-                            c='red',
-                            s=30,
-                            marker='o',
-                            alpha=0.8
-                        )
-
-                    else:
-                        try:
-                            sns.kdeplot(
-                                    data=df_plot,
-                                    x="PlateLocSide",
-                                    y="PlateLocHeight",
-                                    ax=ax,
-                                    fill=True,
-                                    cmap="Reds",
-                                    bw_adjust=0.5,
-                                    levels=5,
-                                    thresh=0.05,
-                                )
-                        except ValueError:
-                            ax.scatter(
-                                df_plot['PlateLocSide'],
-                                df_plot['PlateLocHeight'],
-                                c='red',
-                                s=30,
-                                marker='o',
-                                alpha=0.8
-                            )
-
-# 5) now redraw your strike zone and clean up the axes
-                    sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
-                    sz_y = [1.5, 1.5, 3.5, 3.5, 1.5]
-                    ax.plot(sz_x, sz_y, color="black", linewidth=2)
-                    ax.set_xlim(-2.5, 2.5)
-                    ax.set_ylim(0.5, 5)
-                    ax.set_xticks([])
-                    ax.set_yticks([])
-
-
-            # For the top row, display the pitch type label as the subplot title
-                    ax.set_title(pitch, fontsize=10)
-
-            # For the leftmost column, label the row with the category name
-                    if col_idx == 0:
-                        ax.text(-0.3, 0.5, cat_name, transform=ax.transAxes, rotation=0, va="center", ha="center", fontsize=10)
-
+    # 5) Render the figure
             st.pyplot(fig)
 
 
