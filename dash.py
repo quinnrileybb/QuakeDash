@@ -557,18 +557,13 @@ if position == "Batter":
 
         # 3) now df_cell exists, so you can pull out PlateLocSide/PlateLocHeight
                 df_plot = df_cell[['PlateLocSide','PlateLocHeight']].dropna().astype(float)
-
-
-
-
-
-# 2) define your minimum for a true KDE
+                
                 min_points = 2
 
 # 3) scatter-fallback or KDE
                 if df_plot.shape[0] == 0:
     # truly no points
-                    ax.text(0.5, 0.5, "Not Data",
+                    ax.text(0.5, 0.5, "No Data",
                         ha='center', va='center', transform=ax.transAxes)
                 elif df_plot.shape[0] < min_points \
                      or df_plot['PlateLocSide'].nunique() < 2 \
