@@ -1206,13 +1206,13 @@ else:
 
             # filter down to this pitch & category
                     df_pitch    = df_player[df_player["AutoPitchType"] == pitch]
-                df_filtered = filter_fn(df_pitch)
+                    df_filtered = filter_fn(df_pitch)
 
             # pull just the two columns
-                df_plot = df_filtered[["PlateLocSide","PlateLocHeight"]].dropna().astype(float)
+                    df_plot = df_filtered[["PlateLocSide","PlateLocHeight"]].dropna().astype(float)
 
             # only KDE if ≥2 points & ≥2 unique x & y
-                min_pts = 3
+                    min_pts = 3
                 if df_plot.shape[0] == 0:
                     ax.text(0.5, 0.5, "No Data", ha="center", va="center", transform=ax.transAxes)
                 elif (
