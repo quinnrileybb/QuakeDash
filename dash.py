@@ -1212,13 +1212,13 @@ else:
                 df_plot = df_filtered[["PlateLocSide","PlateLocHeight"]].dropna().astype(float)
 
             # only KDE if ≥2 points & ≥2 unique x & y
-                min_pts = 2
+                min_pts = 3
                 if df_plot.shape[0] == 0:
                     ax.text(0.5, 0.5, "No Data", ha="center", va="center", transform=ax.transAxes)
                 elif (
                     df_plot.shape[0] < min_pts or
-                    df_plot["PlateLocSide"].nunique() < 2 or
-                    df_plot["PlateLocHeight"].nunique() < 2
+                    df_plot["PlateLocSide"].nunique() < 3 or
+                    df_plot["PlateLocHeight"].nunique() < 3
                 ):
                     ax.scatter(df_plot["PlateLocSide"],
                                df_plot["PlateLocHeight"],
