@@ -1168,7 +1168,7 @@ else:
         with tabs[1]:
             st.header("Pitch Location Heatmaps by Category (Top 5 Pitches)")
 
-    # 1) Your original categories & filters
+    # 1) Your categories & filters
             row_filters = {
                 "Overall":    lambda df: df,
                 "Whiffs":     lambda df: df[df["PitchCall"] == "StrikeSwinging"],
@@ -1188,19 +1188,17 @@ else:
                 "LHH 2Strk":  lambda df: df[(df["BatterSide"] == "Left")  & (df["CountSituation"] == "2Strk")]
             }
 
-    # 2) Let user choose category
+    # 2) Category selector
             selected_cat = st.selectbox("Select Category", list(row_filters.keys()))
             filter_fn    = row_filters[selected_cat]
 
-    # 3) Top 5 pitches by usage
+    # 3) Top-5 pitch types
             top5 = df_player["AutoPitchType"].value_counts().index.tolist()[:5]
 
-    # 4) Contour & zone settings
-            contour_levels = [0.01, 0.05, 0.1, 0.2, 0.4]    # same for all
-            zone_rect      = Rectangle((-0.83, 1.5), 1.66, 2.0,
-                                       fill=False, edgecolor="black", linewidth=2)
+    # 4) Shared contour levels
+            contour_levels = [0.01, 0.05, 0.1, 0.2, 0.4]
 
-    # 5) Create 5 side-by-side columns
+    # 5) Layout 5 columns
             cols = st.columns(5)
             for i in range(5):
                 with cols[i]:
@@ -1208,7 +1206,7 @@ else:
                         pt = top5[i]
                         st.subheader(f"{pt} (n={len(df_player[df_player['AutoPitchType']==pt])})")
 
-                # apply category filter then pitch filter
+                # filter by category then pitch type
                         df_cat = filter_fn(df_player)
                         locs   = (
                             df_cat[df_cat["AutoPitchType"] == pt]
@@ -1218,7 +1216,7 @@ else:
 
                         fig, ax = plt.subplots(figsize=(6,4))
 
-                # plot
+                # heatmap or fallback
                         if len(locs) < 2 or locs["PlateLocSide"].nunique() < 2 or locs["PlateLocHeight"].nunique() < 2:
                             ax.text(0.5, 0.5, "No Data",
                                     ha="center", va="center",
@@ -1231,22 +1229,29 @@ else:
                                 levels=contour_levels,
                                 thresh=0.05,
                                 bw_adjust=0.5,
-                                cmap="Reds_r",    # reversed so high density = dark red
+                                cmap="Reds_r",
                                 ax=ax
                             )
 
-                # draw the strike zone rectangle
-                        ax.add_patch(zone_rect)
+                # draw a *new* Rectangle patch for this Axes
+                        rect = Rectangle(
+                            (-0.83, 1.5),   # bottom-left corner
+                            1.66,           # width
+                            2.0,            # height
+                            fill=False,
+                            edgecolor="black",
+                            linewidth=2
+                        )
+                        ax.add_patch(rect)
 
-                # tidy up
+                # cleanup
                         ax.set_xlim(-2.5, 2.5)
                         ax.set_ylim(0.5, 5)
                         ax.set_xticks([]); ax.set_yticks([])
-                        ax.set_xlabel("") ; ax.set_ylabel("")
+                        ax.set_xlabel(""); ax.set_ylabel("")
 
                         st.pyplot(fig)
                     else:
-                # empty if fewer than 5 pitches
                         cols[i].empty()
 
         # Visuals Tab
