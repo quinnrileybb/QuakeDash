@@ -598,7 +598,8 @@ if position == "Batter":
                 ax.set_ylim(0.5, 5)
                 ax.set_xticks([])
                 ax.set_yticks([])
-
+                ax.xlabel("")
+                ax.ylabel("")
                 ax.set_title(col_name, fontsize=10)
             
             # For the leftmost column, label the row with the event name.
@@ -1166,7 +1167,7 @@ else:
         from matplotlib.patches import Rectangle
 
         with tabs[1]:
-            st.header("Pitch Location Heatmaps by Category (Top 5 Pitches)")
+            st.header("Pitch Location Heatmaps by Category")
 
     # 1) Your categories & filters
             row_filters = {
@@ -1203,7 +1204,7 @@ else:
                 with cols[i]:
                     if i < len(top5):
                         pt = top5[i]
-                        st.subheader(f"{pt} (n={len(df_player[df_player['AutoPitchType']==pt])})")
+                        st.subheader(pt)
 
                 # filter by category then pitch type
                         df_cat = filter_fn(df_player)
