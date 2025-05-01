@@ -1213,7 +1213,7 @@ else:
                             .dropna()
                         )
 
-                        fig, ax = plt.subplots(figsize=(6,4))
+                        fig, ax = plt.subplots(figsize=(4,6))
 
                 # heatmap or fallback
                         if len(locs) < 2 or locs["PlateLocSide"].nunique() < 2 or locs["PlateLocHeight"].nunique() < 2:
