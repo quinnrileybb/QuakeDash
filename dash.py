@@ -599,7 +599,7 @@ if position == "Batter":
                 ax.set_xticks([])
                 ax.set_yticks([])
                 ax.set_xlabel("")
-                ax.set+ylabel("")
+                ax.set_ylabel("")
                 ax.set_title(col_name, fontsize=10)
             
             # For the leftmost column, label the row with the event name.
