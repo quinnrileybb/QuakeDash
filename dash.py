@@ -1196,7 +1196,6 @@ else:
             top5 = df_player["AutoPitchType"].value_counts().index.tolist()[:5]
 
     # 4) Shared contour levels
-            contour_levels = [0.01, 0.05, 0.1, 0.2, 0.4]
 
     # 5) Layout 5 columns
             cols = st.columns(5)
@@ -1229,7 +1228,7 @@ else:
                                 levels=contour_levels,
                                 thresh=0.05,
                                 bw_adjust=0.5,
-                                cmap="Reds_r",
+                                cmap="Reds",
                                 ax=ax
                             )
 
