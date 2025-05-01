@@ -1163,104 +1163,71 @@ else:
         # Heatmaps Tab
         # -------------------------
         with tabs[1]:
-        st.header("Heatmaps")
-        st.markdown("#### Pitch Location Heatmaps by Category (Top 5 Pitch Types)")
+            st.header("Pitch Location Heatmaps by Category")
 
-    # 1) Your row categories & filters
-        row_filters = {
-            "Overall":       lambda df: df,
-            "Whiffs":        lambda df: df[df["PitchCall"] == "StrikeSwinging"],
-            "Hard Hit":      lambda df: df[(df["PitchCall"] == "InPlay") & (df["ExitSpeed"] > 95)],
-            "Soft Hit":      lambda df: df[(df["PitchCall"] == "InPlay") & (df["ExitSpeed"] <= 95)],
-            "RHH":           lambda df: df[df["BatterSide"] == "Right"],
-            "LHH":           lambda df: df[df["BatterSide"] == "Left"],
-            "RHH 0-0":       lambda df: df[(df["BatterSide"] == "Right") & (df["CountSituation"] == "0-0")],
-            "LHH 0-0":       lambda df: df[(df["BatterSide"] == "Left")  & (df["CountSituation"] == "0-0")],
-            "RHH 2nd":       lambda df: df[(df["BatterSide"] == "Right") & (df["second_pitch"])],
-            "LHH 2nd":       lambda df: df[(df["BatterSide"] == "Left")  & (df["second_pitch"])],
-            "RHH Ahead":     lambda df: df[(df["BatterSide"] == "Right") & (df["CountSituation"] == "Ahead")],
-            "LHH Ahead":     lambda df: df[(df["BatterSide"] == "Left")  & (df["CountSituation"] == "Ahead")],
-            "RHH Behind":    lambda df: df[(df["BatterSide"] == "Right") & (df["CountSituation"] == "Behind")],
-            "LHH Behind":    lambda df: df[(df["BatterSide"] == "Left")  & (df["CountSituation"] == "Behind")],
-            "RHH 2Strk":     lambda df: df[(df["BatterSide"] == "Right") & (df["CountSituation"] == "2Strk")],
-            "LHH 2Strk":     lambda df: df[(df["BatterSide"] == "Left")  & (df["CountSituation"] == "2Strk")]
-    }
+    # 1) Define your original row‐categories & filters
+            row_filters = {
+                "Overall":    lambda df: df,
+                "Whiffs":     lambda df: df[df["PitchCall"] == "StrikeSwinging"],
+                "Hard Hit":   lambda df: df[(df["PitchCall"] == "InPlay") & (df["ExitSpeed"] > 95)],
+                "Soft Hit":   lambda df: df[(df["PitchCall"] == "InPlay") & (df["ExitSpeed"] <= 95)],
+                "RHH":        lambda df: df[df["BatterSide"] == "Right"],
+                "LHH":        lambda df: df[df["BatterSide"] == "Left"],
+                "RHH 0-0":    lambda df: df[(df["BatterSide"]=="Right") & (df["CountSituation"]=="0-0")],
+                "LHH 0-0":    lambda df: df[(df["BatterSide"]=="Left")  & (df["CountSituation"]=="0-0")],
+                "RHH 2nd":    lambda df: df[(df["BatterSide"]=="Right") & (df["second_pitch"])],
+                "LHH 2nd":    lambda df: df[(df["BatterSide"]=="Left")  & (df["second_pitch"])],
+                "RHH Ahead":  lambda df: df[(df["BatterSide"]=="Right") & (df["CountSituation"]=="Ahead")],
+                "LHH Ahead":  lambda df: df[(df["BatterSide"]=="Left")  & (df["CountSituation"]=="Ahead")],
+                "RHH Behind": lambda df: df[(df["BatterSide"]=="Right") & (df["CountSituation"]=="Behind")],
+                "LHH Behind": lambda df: df[(df["BatterSide"]=="Left")  & (df["CountSituation"]=="Behind")],
+                "RHH 2Strk":  lambda df: df[(df["BatterSide"]=="Right") & (df["CountSituation"]=="2Strk")],
+                "LHH 2Strk":  lambda df: df[(df["BatterSide"]=="Left")  & (df["CountSituation"]=="2Strk")]
+            }
 
-    # 2) Top 5 pitch types by overall usage
-        top5 = df_player["AutoPitchType"].value_counts().index.tolist()[:5]
+    # 2) Let user pick the category
+            selected_cat = st.selectbox("Select Category", list(row_filters.keys()))
 
-    # 3) Fixed contour levels for uniformity
-        contour_levels = [0.01, 0.05, 0.1, 0.2, 0.4]
+    # 3) Get the filter function
+            filter_fn = row_filters[selected_cat]
 
-    # 4) Strike zone outline
-        sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
-        sz_y = [ 1.5 ,  1.5 ,  3.5 ,  3.5 ,  1.5 ]
+    # 4) Top 5 pitch types by usage
+            top5 = df_player["AutoPitchType"].value_counts().index.tolist()[:5]
 
-    # 5) Build subplot grid: rows = len(row_filters), cols = 5
-        n_rows = len(row_filters)
-        n_cols = 5
-        fig, axs = plt.subplots(n_rows, n_cols,
-                                figsize=(n_cols * 3, n_rows * 3),
-                                constrained_layout=True)
-    # ensure 2D indexing
-        if n_rows == 1: axs = axs[np.newaxis, :]
-        if n_cols == 1: axs = axs[:, np.newaxis]
+    # 5) Fixed contour levels & strike‐zone outline
+            contour_levels = [0.01, 0.05, 0.1, 0.2, 0.4]
+            sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
+            sz_y = [ 1.5 ,  1.5 ,  3.5 ,  3.5 ,  1.5 ]
 
-    # 6) Loop rows × cols
-        for i, (row_name, row_fn) in enumerate(row_filters.items()):
-            for j in range(n_cols):
-                ax = axs[i, j]
+    # 6) Loop through each top‐5 pitch type and draw a 6×4″ heatmap
+            for pt in top5:
+                st.subheader(f"{pt} (n={len(df_player[df_player['AutoPitchType']==pt])})")
+        # apply category filter THEN pitch‐type filter
+                df_cat = filter_fn(df_player)
+                df_pt  = df_cat[df_cat["AutoPitchType"] == pt][["PlateLocSide","PlateLocHeight"]].dropna()
 
-                if j < len(top5):
-                    pt = top5[j]
-                # apply row filter then pitch‐type filter
-                    df_cat = row_fn(df_player)
-                    df_pt  = df_cat[df_cat["AutoPitchType"] == pt]
-                    df_plot = (
-                        df_pt[["PlateLocSide","PlateLocHeight"]]
-                        .dropna()
-                        .astype(float)
+                fig, ax = plt.subplots(figsize=(6, 4))
+                if len(df_pt) < 2 or df_pt["PlateLocSide"].nunique()<2 or df_pt["PlateLocHeight"].nunique()<2:
+                    ax.text(0.5, 0.5, "No Data", ha="center", va="center", transform=ax.transAxes)
+                else:
+                    sns.kdeplot(
+                        x=df_pt["PlateLocSide"],
+                        y=df_pt["PlateLocHeight"],
+                        fill=True,
+                        levels=contour_levels,
+                        thresh=0.05,
+                        bw_adjust=0.5,
+                        cmap="Reds",
+                        ax=ax
                     )
 
-                # fallback logic
-                    if len(df_plot) < 2 or \
-                       df_plot["PlateLocSide"].nunique() < 2 or \
-                       df_plot["PlateLocHeight"].nunique() < 2:
-                        ax.text(0.5, 0.5, "No Data",
-                                ha="center", va="center",
-                                transform=ax.transAxes)
-                    else:
-                        sns.kdeplot(
-                            x=df_plot["PlateLocSide"],
-                            y=df_plot["PlateLocHeight"],
-                            fill=True,
-                            levels=contour_levels,
-                            thresh=0.05,
-                            bw_adjust=0.5,
-                            cmap="Reds",
-                            ax=ax
-                        )
-                    ax.set_title(pt, fontsize=10)
-                else:
-                # blank extra columns
-                    ax.axis("off")
-
-            # always draw strike zone & hide ticks
+        # draw strike zone & clean axes
                 ax.plot(sz_x, sz_y, color="black", linewidth=2)
                 ax.set_xlim(-2.5, 2.5)
                 ax.set_ylim(0.5, 5)
                 ax.set_xticks([]); ax.set_yticks([])
-
-            # label row on first column
-                if j == 0:
-                    ax.text(-0.3, 0.5, row_name,
-                            transform=ax.transAxes,
-                            rotation=0, va="center", ha="center",
-                            fontsize=10)
-
-    # 7) Render
-        st.pyplot(fig)
-
+    
+                st.pyplot(fig)
 
 
         # Visuals Tab
