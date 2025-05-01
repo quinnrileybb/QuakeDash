@@ -1225,7 +1225,7 @@ else:
                                 x=locs["PlateLocSide"],
                                 y=locs["PlateLocHeight"],
                                 fill=True,
-                                levels=contour_levels,
+                                levels=5,
                                 thresh=0.05,
                                 bw_adjust=0.5,
                                 cmap="Reds",
