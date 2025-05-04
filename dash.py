@@ -28,12 +28,12 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.success("Welcome to QuakeDash.")
+st.success("Welcome to QuakeDash (Dartmouth).")
 
 # -------------------------
 # Sidebar Dropdowns for Team/Position/Player Selection
 # -------------------------
-teams = ['PEN_QUA']
+teams = ['DAR_GRE']
 col1, col2, col3 = st.columns(3)
 with col1:
     selected_team = st.selectbox("Select Team", teams)
