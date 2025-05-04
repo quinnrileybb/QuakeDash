@@ -28,7 +28,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.success("Welcome to QuakeDash.")
+st.success("Welcome to QuakeDash (Brown).")
 
 # -------------------------
 # Sidebar Dropdowns for Team/Position/Player Selection
