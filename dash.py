@@ -5,7 +5,7 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-df = pd.read_csv('penn_5_2.csv')
+df = pd.read_csv('brown_5_2.csv')
 
 # -------------------------
 # Page & Login Configuration
