@@ -5,12 +5,12 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-df = pd.read_csv('cornell_5_2.csv')
+df = pd.read_csv('columbia_5_2.csv')
 
 # -------------------------
 # Page & Login Configuration
 # -------------------------
-st.set_page_config(page_title="Cornell", layout="wide")
+st.set_page_config(page_title="Columbia", layout="wide")
 # Persistent small logo in the top-right corner.
 st.markdown(
     """
@@ -28,12 +28,12 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.success("Welcome to QuakeDash (Cornell).")
+st.success("Welcome to QuakeDash (Columbia).")
 
 # -------------------------
 # Sidebar Dropdowns for Team/Position/Player Selection
 # -------------------------
-teams = ['COR_BRE']
+teams = ['COL_LION']
 col1, col2, col3 = st.columns(3)
 with col1:
     selected_team = st.selectbox("Select Team", teams)
