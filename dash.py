@@ -5,7 +5,7 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-df = pd.read_csv('penn_5_2.csv')
+df = pd.read_csv('harvard_5_2.csv')
 
 # -------------------------
 # Page & Login Configuration
@@ -28,12 +28,12 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.success("Welcome to QuakeDash.")
+st.success("Welcome to QuakeDash (Harvard.")
 
 # -------------------------
 # Sidebar Dropdowns for Team/Position/Player Selection
 # -------------------------
-teams = ['PEN_QUA']
+teams = ['HAR_CRI']
 col1, col2, col3 = st.columns(3)
 with col1:
     selected_team = st.selectbox("Select Team", teams)
