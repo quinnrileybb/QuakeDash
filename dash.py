@@ -10,7 +10,7 @@ df = pd.read_csv('harvard_5_2.csv')
 # -------------------------
 # Page & Login Configuration
 # -------------------------
-st.set_page_config(page_title="QuakeDash", layout="wide")
+st.set_page_config(page_title="Harvard", layout="wide")
 # Persistent small logo in the top-right corner.
 st.markdown(
     """
@@ -28,7 +28,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.success("Welcome to QuakeDash (Harvard.")
+st.success("Welcome to QuakeDash (Harvard).")
 
 # -------------------------
 # Sidebar Dropdowns for Team/Position/Player Selection
