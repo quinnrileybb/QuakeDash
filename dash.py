@@ -10,7 +10,7 @@ df = pd.read_csv('brown_5_2.csv')
 # -------------------------
 # Page & Login Configuration
 # -------------------------
-st.set_page_config(page_title="QuakeDash", layout="wide")
+st.set_page_config(page_title="Brown", layout="wide")
 # Persistent small logo in the top-right corner.
 st.markdown(
     """
