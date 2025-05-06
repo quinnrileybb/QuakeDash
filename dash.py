@@ -1478,13 +1478,13 @@ else:
                 df_player['run_value'] = df_player['play_by_play'].apply(get_run_value)
 
                 st.subheader("RV-Based Movement Hexbin")
-                fig, ax = plt.subplots(figsize=(6, 6))
+                fig, ax = plt.subplots(figsize=(4, 4))
                 hb = ax.hexbin(
                     df_player["HorzBreak"],
                     df_player["InducedVertBreak"],
                     C=df_player["run_value"],
                     reduce_C_function=np.mean,
-                    gridsize=20,
+                    gridsize=10,
                     cmap="Reds",
                     mincnt=1
                 )
