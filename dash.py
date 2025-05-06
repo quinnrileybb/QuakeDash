@@ -1467,6 +1467,30 @@ else:
                 st.pyplot(plt.gcf())
                 plt.clf()
 
+            with col2:
+
+                st.subheader("RV-Based Movement Hexbin")
+                fig, ax = plt.subplots(figsize=(6, 6))
+                hb = ax.hexbin(
+                    df_player["HorzBreak"],
+                    df_player["InducedVertBreak"],
+                    C=df_player["run_value"],
+                    reduce_C_function=np.mean,
+                    gridsize=30,
+                    cmap="Reds",
+                    mincnt=1
+                )
+                ax.axhline(0, color='black', linestyle='--')
+                ax.axvline(0, color='black', linestyle='--')
+                ax.set_xlim(-25, 25)
+                ax.set_ylim(-25, 25)
+                ax.set_xlabel("Horizontal Break (HB)")
+                ax.set_ylabel("Induced Vertical Break (IVB)")
+                ax.set_title(f"{selected_player} – RV-Weighted Movement")
+                cb = fig.colorbar(hb, ax=ax)
+                cb.set_label("Mean RV")
+                st.pyplot(fig)
+                plt.clf()
 
 
         # Models Tab
