@@ -1486,7 +1486,7 @@ else:
                     reduce_C_function=np.mean,
                     gridsize=20,
                     cmap="Reds",
-                    mincnt=5
+                    mincnt=2
                 )
                 ax.axhline(0, color='black', linestyle='--')
                 ax.axvline(0, color='black', linestyle='--')
