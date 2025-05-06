@@ -1495,8 +1495,6 @@ else:
                 ax.set_xlabel("Horizontal Break (HB)")
                 ax.set_ylabel("Induced Vertical Break (IVB)")
                 ax.set_title(f"{selected_player} – RV-Weighted Movement")
-                cb = fig.colorbar(hb, ax=ax)
-                cb.set_label("Mean RV")
                 st.pyplot(fig)
                 plt.clf()
 
