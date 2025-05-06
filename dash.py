@@ -1484,7 +1484,7 @@ else:
                     df_player["InducedVertBreak"],
                     C=df_player["run_value"],
                     reduce_C_function=np.mean,
-                    gridsize=30,
+                    gridsize=50,
                     cmap="Reds",
                     mincnt=1
                 )
