@@ -1469,6 +1469,14 @@ else:
 
             with col2:
 
+                # right after df_player is defined in the Data tab, before you do any filtering:
+                df_player['play_by_play'] = np.where(
+                    df_player['PlayResult'] != 'Undefined',
+                    df_player['PlayResult'],
+                    df_player['PitchCall']
+                )
+                df_player['run_value'] = df_player['play_by_play'].apply(get_run_value)
+
                 st.subheader("RV-Based Movement Hexbin")
                 fig, ax = plt.subplots(figsize=(6, 6))
                 hb = ax.hexbin(
