@@ -1557,7 +1557,7 @@ else:
 
                 if not df_filtered.empty:
         # Dynamically calculate pitch metrics
-                     metrics = df_filtered.agg({
+                    metrics = df_filtered.agg({
                         "RelSpeed": ["mean", "max"],
                         "SpinRate": "mean",
                         "Tilt_numeric": "mean",
