@@ -1557,18 +1557,21 @@ else:
 
                 if not df_filtered.empty:
         # Dynamically calculate pitch metrics
-                    metrics = df_filtered.agg({
-                        "RelSpeed": ["mean", "max"],
-                        "SpinRate": "mean",
-                        "Tilt_numeric": "mean",
-                        "InducedVertBreak": "mean",
-                        "HorzBreak": "mean",
-                        "VertApprAngle": "mean",
-                        "HorzApprAngle": "mean",
-                        "Extension": "mean",                            
-                        "RelHeight": "mean",
-                        "RelSide": "mean"
-                    }).T
+                    grouped_filtered = pd.DataFrame([{
+                        "Pitch Type": selected_pitch_type,
+                        "MPH": df_filtered["RelSpeed"].mean(),
+                        "Top MPH": df_filtered["RelSpeed"].max(),
+                        "RPMs": df_filtered["SpinRate"].mean(),
+                        "Tilt": df_filtered["Tilt_numeric"].mean(),
+                        "IVB": df_filtered["InducedVertBreak"].mean(),
+                        "HB": df_filtered["HorzBreak"].mean(),
+                        "VAA": df_filtered["VertApprAngle"].mean(),
+                        "HAA": df_filtered["HorzApprAngle"].mean(),
+                        "Extension": df_filtered["Extension"].mean(),
+                        "RelHeight": df_filtered["RelHeight"].mean(),
+                        "RelSide": df_filtered["RelSide"].mean()
+                    }])
+
                     metrics.columns = ["MPH", "Top MPH", "RPMs", "Tilt", "IVB", "HB", "VAA", "HAA", "Extension", "RelHeight", "RelSide"]
                     metrics.insert(0, "Pitch Type", selected_pitch_type)
                     grouped_filtered = metrics.reset_index(drop=True)
