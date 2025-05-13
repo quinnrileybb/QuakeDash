@@ -1499,7 +1499,7 @@ else:
                 plt.clf()
 
 
-        # Models Tab
+        # #Pitch Analyzer Tab
         with tabs[3]:
             st.header("Pitch Analyzer")
 
