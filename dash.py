@@ -1503,37 +1503,43 @@ else:
             with tabs[3]:
                 st.header("Pitch Analyzer")
 
-    # 1. Filter to this player's pitch types
                 available_pitches = df_player["AutoPitchType"].dropna().unique()
                 selected_pitch_type = st.selectbox("Select Pitch Type", sorted(available_pitches))
 
-    # 2. Filter data to that pitch type
                 df_selected_pitch = df_player[df_player["AutoPitchType"] == selected_pitch_type].copy()
 
                 st.subheader("Select Feature Ranges")
 
-    # 3. Get slider bounds dynamically from this pitch type's range
-                def slider_range(df, col, default_margin=2):
-                    min_val = float(df[col].min()) if not df[col].isna().all() else 0
-                    max_val = float(df[col].max()) if not df[col].isna().all() else 1
+    # Use columns to reduce height
+                slider_cols = st.columns(3)
+
+                def slider_range(df, col, label):
+                    if df[col].dropna().empty:
+                        return (0, 1)  # fallback
+                    min_val = float(df[col].min())
+                    max_val = float(df[col].max())
                     return st.slider(
-                        f"{col}",
-                        min_value=round(min_val - default_margin, 1),
-                        max_value=round(max_val + default_margin, 1),
-                        value=(round(min_val, 1), round(max_val, 1))
+                        f"{label}",
+                        min_value=round(min_val - 0.5, 1),
+                        max_value=round(max_val + 0.5, 1),
+                        value=(round(min_val, 1), round(max_val, 1)),
+                        key=label
                     )
 
-    # 4. Create sliders
-                velo_range = slider_range(df_selected_pitch, "RelSpeed")
-                ivb_range = slider_range(df_selected_pitch, "InducedVertBreak")
-                hb_range = slider_range(df_selected_pitch, "HorzBreak")
-                spin_range = slider_range(df_selected_pitch, "SpinRate")
-                vaa_range = slider_range(df_selected_pitch, "VertApprAngle")
-                haa_range = slider_range(df_selected_pitch, "HorzApprAngle")
-                rh_range = slider_range(df_selected_pitch, "RelHeight")
-                rs_range = slider_range(df_selected_pitch, "RelSide")
+    # Column-based sliders
+                with slider_cols[0]:
+                    velo_range = slider_range(df_selected_pitch, "RelSpeed", "Velocity (MPH)")
+                    ivb_range = slider_range(df_selected_pitch, "InducedVertBreak", "Induced Vertical Break")
+                    spin_range = slider_range(df_selected_pitch, "SpinRate", "Spin Rate")
 
-    # 5. Apply filters
+                with slider_cols[1]:
+                    hb_range = slider_range(df_selected_pitch, "HorzBreak", "Horizontal Break")
+                    vaa_range = slider_range(df_selected_pitch, "VertApprAngle", "Vertical Approach Angle")
+                    haa_range = slider_range(df_selected_pitch, "HorzApprAngle", "Horizontal Approach Angle")
+                    rh_range = slider_range(df_selected_pitch, "RelHeight", "Release Height")
+                    rs_range = slider_range(df_selected_pitch, "RelSide", "Release Side")
+
+    # Apply filters
                 df_filtered = df_selected_pitch[
                     (df_selected_pitch["RelSpeed"].between(*velo_range)) &
                     (df_selected_pitch["InducedVertBreak"].between(*ivb_range)) &
@@ -1545,17 +1551,124 @@ else:
                     (df_selected_pitch["RelSide"].between(*rs_range))
                 ]
 
-                st.markdown(f"### Filtered Results for `{selected_pitch_type}`")
-                st.write(f"Total pitches after filter: {len(df_filtered)}")
+                    st.markdown(f"### Filtered Results for `{selected_pitch_type}`")
+                    st.write(f"Total pitches after filter: {len(df_filtered)}")
+                    st.dataframe(df_filtered)
 
-    # 6. Show filtered stats: Data tab tables (usage_df, grouped, results_df)
-                st.subheader("Pitch Usage Summary")
-                st.dataframe(usage_df[usage_df["Pitch Type"] == selected_pitch_type])
+                    if not df_filtered.empty:
+        # Dynamically calculate pitch metrics
+                        metrics = df_filtered.agg({
+                            "RelSpeed": ["mean", "max"],
+                            "SpinRate": "mean",
+                            "Tilt_numeric": "mean",
+                            "InducedVertBreak": "mean",
+                            "HorzBreak": "mean",
+                            "VertApprAngle": "mean",
+                            "HorzApprAngle": "mean",
+                            "Extension": "mean",
+                            "RelHeight": "mean",
+                            "RelSide": "mean"
+                        }).T
+                        metrics.columns = ["MPH", "Top MPH", "RPMs", "Tilt", "IVB", "HB", "VAA", "HAA", "Extension", "RelHeight", "RelSide"]
+                        metrics.insert(0, "Pitch Type", selected_pitch_type)
+                        grouped_filtered = metrics.reset_index(drop=True)
 
-                st.subheader("Pitch Metrics")
-                st.dataframe(grouped[grouped["Pitch Type"] == selected_pitch_type])
+                        st.subheader("Pitch Metrics")
+                        st.dataframe(grouped_filtered.style.format({
+                            "MPH": "{:.1f}",
+                            "Top MPH": "{:.1f}",
+                            "RPMs": "{:.0f}",
+                            "Tilt": "{:.1f}",
+                            "IVB": "{:.1f}",
+                            "HB": "{:.1f}",
+                            "VAA": "{:.1f}",
+                            "HAA": "{:.1f}",
+                            "Extension": "{:.1f}",
+                            "RelHeight": "{:.1f}",
+                            "RelSide": "{:.1f}"
+                        }))
 
-                st.subheader("Pitch Results")
-                st.dataframe(results_df[results_df["Pitch Type"] == selected_pitch_type])
+        # Dynamically calculate results
+                          def classify_batted_ball(la):
+                            if pd.isna(la): return np.nan
+                            if la < 10: return 'GroundBall'
+                            elif la < 25: return 'LineDrive'
+                            elif la < 50: return 'FlyBall'
+                            else: return 'Popup'
+
+                        whiffs = df_filtered[df_filtered["PitchCall"] == "StrikeSwinging"].shape[0]
+                        swings = df_filtered[df_filtered["PitchCall"].isin(["StrikeSwinging", "InPlay", "FoulBallNotFieldable", "FoulBallFieldable", "FoulBall", "AutomaticStrike"])].shape[0]
+                        whiff_perc = (whiffs / swings) * 100 if swings > 0 else np.nan
+
+                        csw = df_filtered[df_filtered["PitchCall"].isin(["StrikeCalled", "StrikeSwinging"])].shape[0]
+                        csw_perc = (csw / len(df_filtered)) * 100
+
+                        strike_zone = {"x_min": -0.83, "x_max": 0.83, "z_min": 1.5, "z_max": 3.5}
+                        in_zone = df_filtered[
+                            (df_filtered["PlateLocSide"] >= strike_zone["x_min"]) &
+                            (df_filtered["PlateLocSide"] <= strike_zone["x_max"]) &
+                            (df_filtered["PlateLocHeight"] >= strike_zone["z_min"]) &
+                            (df_filtered["PlateLocHeight"] <= strike_zone["z_max"])
+                        ]
+                        zone_perc = (len(in_zone) / len(df_filtered)) * 100
+                        zone_whiffs = in_zone[in_zone["PitchCall"] == "StrikeSwinging"].shape[0]
+                        zone_swings = in_zone[in_zone["PitchCall"].isin(["StrikeSwinging", "InPlay", "FoulBallNotFieldable", "FoulBallFieldable", "FoulBall", "AutomaticStrike"])].shape[0]
+                        zone_whiff_perc = (zone_whiffs / zone_swings) * 100 if zone_swings > 0 else np.nan
+
+                        df_inplay = df_filtered[df_filtered["PitchCall"] == "InPlay"]
+                        woba_weights = {
+                            'Out': 0,
+                            'Walk': 0.69,
+                            'HitByPitch': 0.72,
+                            'Single': 0.88,
+                            'Double': 1.247,
+                            'Triple': 1.578,
+                            'HomeRun': 2.031
+                        }
+                        wobacon = df_inplay["PlayResult"].map(lambda x: woba_weights.get(x, 0)).sum() / len(df_inplay) if len(df_inplay) > 0 else np.nan
+                        hard_hit = df_inplay[df_inplay["ExitSpeed"] > 95].shape[0]
+                        hard_hit_pct = (hard_hit / len(df_inplay)) * 100 if len(df_inplay) > 0 else np.nan
+
+        # Batted ball types
+                        df_inplay = df_inplay.copy()
+                        df_inplay["BattedBallType"] = df_inplay["Angle"].apply(classify_batted_ball)
+                        total_bip = df_inplay["BattedBallType"].notna().sum()
+                        gb = (df_inplay["BattedBallType"] == "GroundBall").sum() / total_bip * 100 if total_bip > 0 else np.nan
+                        ld = (df_inplay["BattedBallType"] == "LineDrive").sum() / total_bip * 100 if total_bip > 0 else np.nan
+                        fb = (df_inplay["BattedBallType"] == "FlyBall").sum() / total_bip * 100 if total_bip > 0 else np.nan
+
+        # RV/100 using existing run_value column
+                        rv_per_100 = (df_filtered["run_value"].sum() / len(df_filtered)) * 100 if len(df_filtered) > 0 else np.nan
+
+                        results_filtered = pd.DataFrame([{
+                            "Pitch Type": selected_pitch_type,
+                            "Strike%": round((df_filtered["PitchCall"].isin(["StrikeSwinging", "StrikeCalled", "AutomaticStrike"]).sum() / len(df_filtered)) * 100, 1),
+                            "Zone%": round(zone_perc, 1),
+                            "Whiff%": round(whiff_perc, 1),
+                            "Zone-Whiff%": round(zone_whiff_perc, 1),
+                            "CSW%": round(csw_perc, 1),
+                            "Wobacon": round(wobacon, 3),
+                            "Hard Hit%": round(hard_hit_pct, 1),
+                            "GB%": round(gb, 1),
+                            "LD%": round(ld, 1),
+                            "FB%": round(fb, 1),
+                            "RV/100": round(rv_per_100, 1)
+                        }])
+
+                        st.subheader("Pitch Results")
+                        st.dataframe(results_filtered.style.format({
+                            "Strike%": "{:.1f}",
+                            "Zone%": "{:.1f}",
+                            "Whiff%": "{:.1f}",
+                            "Zone-Whiff%": "{:.1f}",
+                            "CSW%": "{:.1f}",
+                            "Wobacon": "{:.3f}",
+                            "Hard Hit%": "{:.1f}",
+                            "GB%": "{:.1f}",
+                            "LD%": "{:.1f}",
+                            "FB%": "{:.1f}",
+                            "RV/100": "{:.1f}"
+                        }))
+
 
 
