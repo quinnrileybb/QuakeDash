@@ -1561,7 +1561,7 @@ else:
                 st.dataframe(df_filtered)
 
                 if not df_filtered.empty:
-        # Dynamically calculate pitch metrics
+        # Pitch Metrics Table
                     grouped_filtered = pd.DataFrame([{
                         "Pitch Type": selected_pitch_type,
                         "MPH": df_filtered["RelSpeed"].mean(),
@@ -1576,10 +1576,6 @@ else:
                         "RelHeight": df_filtered["RelHeight"].mean(),
                         "RelSide": df_filtered["RelSide"].mean()
                     }])
-
-                    metrics.columns = ["MPH", "Top MPH", "RPMs", "Tilt", "IVB", "HB", "VAA", "HAA", "Extension", "RelHeight", "RelSide"]
-                    metrics.insert(0, "Pitch Type", selected_pitch_type)
-                    grouped_filtered = metrics.reset_index(drop=True)
 
                     st.subheader("Pitch Metrics")
                     st.dataframe(grouped_filtered.style.format({
@@ -1596,7 +1592,7 @@ else:
                         "RelSide": "{:.1f}"
                     }))
 
-        # Dynamically calculate results
+        # Pitch Results Table
                     def classify_batted_ball(la):
                         if pd.isna(la): return np.nan
                         if la < 10: return 'GroundBall'
@@ -1637,7 +1633,6 @@ else:
                     hard_hit = df_inplay[df_inplay["ExitSpeed"] > 95].shape[0]
                     hard_hit_pct = (hard_hit / len(df_inplay)) * 100 if len(df_inplay) > 0 else np.nan
 
-        # Batted ball types
                     df_inplay = df_inplay.copy()
                     df_inplay["BattedBallType"] = df_inplay["Angle"].apply(classify_batted_ball)
                     total_bip = df_inplay["BattedBallType"].notna().sum()
@@ -1645,7 +1640,6 @@ else:
                     ld = (df_inplay["BattedBallType"] == "LineDrive").sum() / total_bip * 100 if total_bip > 0 else np.nan
                     fb = (df_inplay["BattedBallType"] == "FlyBall").sum() / total_bip * 100 if total_bip > 0 else np.nan
 
-        # RV/100 using existing run_value column
                     rv_per_100 = (df_filtered["run_value"].sum() / len(df_filtered)) * 100 if len(df_filtered) > 0 else np.nan
 
                     results_filtered = pd.DataFrame([{
@@ -1677,6 +1671,5 @@ else:
                         "FB%": "{:.1f}",
                         "RV/100": "{:.1f}"
                     }))
-
 
 
