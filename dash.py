@@ -1558,7 +1558,6 @@ else:
 
                 st.markdown(f"### Filtered Results for `{selected_pitch_type}`")
                 st.write(f"Total pitches after filter: {len(df_filtered)}")
-                st.dataframe(df_filtered)
 
                 if not df_filtered.empty:
         # Pitch Metrics Table
