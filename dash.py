@@ -1537,7 +1537,7 @@ else:
                     vaa_range = slider_range(df_selected_pitch, "VertApprAngle", "Vertical Approach Angle")
                     haa_range = slider_range(df_selected_pitch, "HorzApprAngle", "Horizontal Approach Angle")
 
-                with slider_cols[3]:
+                with slider_cols[2]:
                     rh_range = slider_range(df_selected_pitch, "RelHeight", "Release Height")
                     rs_range = slider_range(df_selected_pitch, "RelSide", "Release Side")
 
