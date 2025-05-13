@@ -652,7 +652,7 @@ if position == "Batter":
 
 else:
     # Create tabs for the Pitcher section.
-    tabs = st.tabs(["Data", "Heatmaps", "Visuals", "Models"])
+    tabs = st.tabs(["Data", "Heatmaps", "Visuals", "Pitch Analyzer"])
 
 
     # =========================
