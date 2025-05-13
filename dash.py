@@ -1511,7 +1511,7 @@ else:
                 st.subheader("Select Feature Ranges")
 
     # Use columns to reduce height
-                slider_cols = st.columns(3)
+                slider_cols = st.columns(4)
 
                 def slider_range(df, col, label):
                     if df[col].dropna().empty:
@@ -1529,15 +1529,18 @@ else:
     # Column-based sliders
                 with slider_cols[0]:
                     velo_range = slider_range(df_selected_pitch, "RelSpeed", "Velocity (MPH)")
-                    ivb_range = slider_range(df_selected_pitch, "InducedVertBreak", "Induced Vertical Break")
                     spin_range = slider_range(df_selected_pitch, "SpinRate", "Spin Rate")
 
+
                 with slider_cols[1]:
+                    ivb_range = slider_range(df_selected_pitch, "InducedVertBreak", "Induced Vertical Break")
                     hb_range = slider_range(df_selected_pitch, "HorzBreak", "Horizontal Break")
+
+                with slider_cols[2]:
                     vaa_range = slider_range(df_selected_pitch, "VertApprAngle", "Vertical Approach Angle")
                     haa_range = slider_range(df_selected_pitch, "HorzApprAngle", "Horizontal Approach Angle")
 
-                with slider_cols[2]:
+                with slider_cols[3]:
                     rh_range = slider_range(df_selected_pitch, "RelHeight", "Release Height")
                     rs_range = slider_range(df_selected_pitch, "RelSide", "Release Side")
 
