@@ -1551,23 +1551,23 @@ else:
                     (df_selected_pitch["RelSide"].between(*rs_range))
                 ]
 
-                    st.markdown(f"### Filtered Results for `{selected_pitch_type}`")
-                    st.write(f"Total pitches after filter: {len(df_filtered)}")
-                    st.dataframe(df_filtered)
+                st.markdown(f"### Filtered Results for `{selected_pitch_type}`")
+                st.write(f"Total pitches after filter: {len(df_filtered)}")
+                st.dataframe(df_filtered)
 
-                    if not df_filtered.empty:
+                if not df_filtered.empty:
         # Dynamically calculate pitch metrics
-                        metrics = df_filtered.agg({
-                            "RelSpeed": ["mean", "max"],
-                            "SpinRate": "mean",
-                            "Tilt_numeric": "mean",
-                            "InducedVertBreak": "mean",
-                            "HorzBreak": "mean",
-                            "VertApprAngle": "mean",
-                            "HorzApprAngle": "mean",
-                            "Extension": "mean",
-                            "RelHeight": "mean",
-                            "RelSide": "mean"
+                     metrics = df_filtered.agg({
+                        "RelSpeed": ["mean", "max"],
+                        "SpinRate": "mean",
+                        "Tilt_numeric": "mean",
+                        "InducedVertBreak": "mean",
+                        "HorzBreak": "mean",
+                        "VertApprAngle": "mean",
+                        "HorzApprAngle": "mean",
+                        "Extension": "mean",                            
+                        "RelHeight": "mean",
+                        "RelSide": "mean"
                         }).T
                         metrics.columns = ["MPH", "Top MPH", "RPMs", "Tilt", "IVB", "HB", "VAA", "HAA", "Extension", "RelHeight", "RelSide"]
                         metrics.insert(0, "Pitch Type", selected_pitch_type)
@@ -1589,7 +1589,7 @@ else:
                         }))
 
         # Dynamically calculate results
-                          def classify_batted_ball(la):
+                        def classify_batted_ball(la):
                             if pd.isna(la): return np.nan
                             if la < 10: return 'GroundBall'
                             elif la < 25: return 'LineDrive'
