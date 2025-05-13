@@ -1500,62 +1500,62 @@ else:
 
 
         # #Pitch Analyzer Tab
-        with tabs[3]:
-            st.header("Pitch Analyzer")
+            with tabs[3]:
+                st.header("Pitch Analyzer")
 
     # 1. Filter to this player's pitch types
-            available_pitches = df_player["AutoPitchType"].dropna().unique()
-            selected_pitch_type = st.selectbox("Select Pitch Type", sorted(available_pitches))
+                available_pitches = df_player["AutoPitchType"].dropna().unique()
+                selected_pitch_type = st.selectbox("Select Pitch Type", sorted(available_pitches))
 
     # 2. Filter data to that pitch type
-            df_selected_pitch = df_player[df_player["AutoPitchType"] == selected_pitch_type].copy()
+                df_selected_pitch = df_player[df_player["AutoPitchType"] == selected_pitch_type].copy()
 
-            st.subheader("Select Feature Ranges")
+                st.subheader("Select Feature Ranges")
 
     # 3. Get slider bounds dynamically from this pitch type's range
-            def slider_range(df, col, default_margin=2):
-                min_val = float(df[col].min()) if not df[col].isna().all() else 0
-                max_val = float(df[col].max()) if not df[col].isna().all() else 1
-                return st.slider(
-                    f"{col}",
-                    min_value=round(min_val - default_margin, 1),
-                    max_value=round(max_val + default_margin, 1),
-                    value=(round(min_val, 1), round(max_val, 1))
-                )
+                def slider_range(df, col, default_margin=2):
+                    min_val = float(df[col].min()) if not df[col].isna().all() else 0
+                    max_val = float(df[col].max()) if not df[col].isna().all() else 1
+                    return st.slider(
+                        f"{col}",
+                        min_value=round(min_val - default_margin, 1),
+                        max_value=round(max_val + default_margin, 1),
+                        value=(round(min_val, 1), round(max_val, 1))
+                    )
 
     # 4. Create sliders
-            velo_range = slider_range(df_selected_pitch, "RelSpeed")
-            ivb_range = slider_range(df_selected_pitch, "InducedVertBreak")
-            hb_range = slider_range(df_selected_pitch, "HorzBreak")
-            spin_range = slider_range(df_selected_pitch, "SpinRate")
-            vaa_range = slider_range(df_selected_pitch, "VertApprAngle")
-            haa_range = slider_range(df_selected_pitch, "HorzApprAngle")
-            rh_range = slider_range(df_selected_pitch, "RelHeight")
-            rs_range = slider_range(df_selected_pitch, "RelSide")
+                velo_range = slider_range(df_selected_pitch, "RelSpeed")
+                ivb_range = slider_range(df_selected_pitch, "InducedVertBreak")
+                hb_range = slider_range(df_selected_pitch, "HorzBreak")
+                spin_range = slider_range(df_selected_pitch, "SpinRate")
+                vaa_range = slider_range(df_selected_pitch, "VertApprAngle")
+                haa_range = slider_range(df_selected_pitch, "HorzApprAngle")
+                rh_range = slider_range(df_selected_pitch, "RelHeight")
+                rs_range = slider_range(df_selected_pitch, "RelSide")
 
     # 5. Apply filters
-            df_filtered = df_selected_pitch[
-                (df_selected_pitch["RelSpeed"].between(*velo_range)) &
-                (df_selected_pitch["InducedVertBreak"].between(*ivb_range)) &
-                (df_selected_pitch["HorzBreak"].between(*hb_range)) &
-                (df_selected_pitch["SpinRate"].between(*spin_range)) &
-                (df_selected_pitch["VertApprAngle"].between(*vaa_range)) &
-                (df_selected_pitch["HorzApprAngle"].between(*haa_range)) &
-                (df_selected_pitch["RelHeight"].between(*rh_range)) &
-                (df_selected_pitch["RelSide"].between(*rs_range))
-            ]
+                df_filtered = df_selected_pitch[
+                    (df_selected_pitch["RelSpeed"].between(*velo_range)) &
+                    (df_selected_pitch["InducedVertBreak"].between(*ivb_range)) &
+                    (df_selected_pitch["HorzBreak"].between(*hb_range)) &
+                    (df_selected_pitch["SpinRate"].between(*spin_range)) &
+                    (df_selected_pitch["VertApprAngle"].between(*vaa_range)) &
+                    (df_selected_pitch["HorzApprAngle"].between(*haa_range)) &
+                    (df_selected_pitch["RelHeight"].between(*rh_range)) &
+                    (df_selected_pitch["RelSide"].between(*rs_range))
+                ]
 
-            st.markdown(f"### Filtered Results for `{selected_pitch_type}`")
-            st.write(f"Total pitches after filter: {len(df_filtered)}")
+                st.markdown(f"### Filtered Results for `{selected_pitch_type}`")
+                st.write(f"Total pitches after filter: {len(df_filtered)}")
 
     # 6. Show filtered stats: Data tab tables (usage_df, grouped, results_df)
-            st.subheader("Pitch Usage Summary")
-            st.dataframe(usage_df[usage_df["Pitch Type"] == selected_pitch_type])
+                st.subheader("Pitch Usage Summary")
+                st.dataframe(usage_df[usage_df["Pitch Type"] == selected_pitch_type])
 
-            st.subheader("Pitch Metrics")
-            st.dataframe(grouped[grouped["Pitch Type"] == selected_pitch_type])
+                st.subheader("Pitch Metrics")
+                st.dataframe(grouped[grouped["Pitch Type"] == selected_pitch_type])
 
-            st.subheader("Pitch Results")
-            st.dataframe(results_df[results_df["Pitch Type"] == selected_pitch_type])
+                st.subheader("Pitch Results")
+                st.dataframe(results_df[results_df["Pitch Type"] == selected_pitch_type])
 
 
