@@ -956,7 +956,7 @@ else:
         strike_zone = {"x_min": -0.83, "x_max": 0.83, "z_min": 1.5, "z_max": 3.5}
         strike_set = {"Strike Looking", "StrikeSwinging", "InPlay", "FoulBallNotFieldable",
                       "FoulBallFieldable", "FoulBall", "AutomaticStrike"}
-        swing_set = {"StrikeSwinging", "InPlay", "FoulBallNotFieldable", "FoulBallFieldable", "FoulBall", "AutomaticStrike"}
+        swing_set = {"StrikeSwinging", "InPlay", "FoulBallNotFieldable", "FoulBallFieldable", "FoulBall"}
         chase_set = {"StrikeSwinging", "InPlay", "FoulBallNotFieldable", "FoulBallFieldable", "FoulBall"}
         zone = {"x_min": -0.83, "x_max": 0.83, "z_min": 1.5, "z_max": 3.5}
         woba_weights = {
@@ -1644,7 +1644,7 @@ else:
 
                     results_filtered = pd.DataFrame([{
                         "Pitch Type": selected_pitch_type,
-                        "Strike%": round((df_filtered["PitchCall"].isin(["StrikeSwinging", "StrikeCalled", "AutomaticStrike"]).sum() / len(df_filtered)) * 100, 1),
+                        "Strike%": round((df_filtered["PitchCall"].isin(["StrikeSwinging", "StrikeCalled", "AutomaticStrike", "FoulBallFieldable", "FoulBallNotFieldable", "FoulBall", "InPlay"]).sum() / len(df_filtered)) * 100, 1),
                         "Zone%": round(zone_perc, 1),
                         "Whiff%": round(whiff_perc, 1),
                         "Zone-Whiff%": round(zone_whiff_perc, 1),
