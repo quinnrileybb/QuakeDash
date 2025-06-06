@@ -656,7 +656,7 @@ if position == "Batter":
                 df_player["GameID"].astype(str) + "_" +
                 df_player["Inning"].astype(str) + "_" +
                 df_player["Batter"].astype(str) + "_" +
-                df_player["PAofGame"].astype(str)
+                df_player["PAofGame"].astype(str))
 
 
 # Now assign an AB number within each GameID
