@@ -58,7 +58,7 @@ if position == "Batter":
     st.header("Hitters Section")
     
     # Create tabs for the hitter section: Data, Heatmaps, Visuals, Models.
-    tabs = st.tabs(["Data", "Heatmaps", "Visuals", "Models"])
+    tabs = st.tabs(["Data", "Heatmaps", "Visuals", "At-b"])
     
     with tabs[0]:
         st.subheader("2025 Hitting Data")
@@ -647,6 +647,52 @@ if position == "Batter":
             ax_ev.set_xlabel("Exit Velocity")
             ax_ev.set_ylabel("Density")
             st.pyplot(fig_ev)
+
+        # Sort the player data first
+                df_player = df_player.sort_values(["GameDate", "GameID", "Inning", "PitchNo"]).copy()
+
+# Create an AB key that groups together pitches by Game + Inning + Batter + PlateAppearance index
+                df_player["ab_key"] = (
+                    df_player["GameID"].astype(str) + "_" +
+                    df_player["Inning"].astype(str) + "_" +
+                    df_player["Batter"].astype(str) + "_" +
+                    df_player["PAofGame"].astype(str)
+)
+
+# Now assign an AB number within each GameID
+                df_player["ABNumber"] = df_player.groupby("GameID")["ab_key"].rank(method="dense").astype(int)
+
+
+
+    with tabs[3]:
+        st.header("At-Bat Analyzer")
+
+    # Only show dates where the player actually played
+        available_dates = df_player["GameDate"].dropna().unique()
+        available_dates = sorted(pd.to_datetime(available_dates).dt.strftime("%Y-%m-%d").unique())
+
+        selected_date = st.selectbox("Select Game Date", available_dates)
+
+    # Filter to just the selected game date
+        df_date = df_player[pd.to_datetime(df_player["GameDate"]).dt.strftime("%Y-%m-%d") == selected_date]
+
+    # Create the label for each AB with pitcher name
+        df_date["AB_Label"] = df_date["ABNumber"].astype(str) + " vs " + df_date["Pitcher"]
+
+    # Get distinct ABs with labels
+        unique_abs = df_date[["ABNumber", "AB_Label"]].drop_duplicates().sort_values("ABNumber")
+
+        selected_ab_label = st.selectbox("Select At-Bat", unique_abs["AB_Label"].tolist())
+
+    # Extract ABNumber from label
+        selected_ab_number = int(selected_ab_label.split(" vs ")[0])
+
+    # Filter to just that AB
+        df_ab = df_date[df_date["ABNumber"] == selected_ab_number]
+
+        st.subheader(f"AB #{selected_ab_number} vs {df_ab['Pitcher'].iloc[0]}")
+        st.write(f"{len(df_ab)} pitches in this AB")
+
 
 
 
