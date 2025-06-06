@@ -657,7 +657,7 @@ if position == "Batter":
                 df_player["Inning"].astype(str) + "_" +
                 df_player["Batter"].astype(str) + "_" +
                 df_player["PAofGame"].astype(str)
-)
+
 
 # Now assign an AB number within each GameID
             df_player["ABNumber"] = df_player.groupby("GameID")["ab_key"].rank(method="dense").astype(int)
