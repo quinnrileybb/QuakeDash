@@ -653,56 +653,56 @@ if position == "Batter":
             
 
 
-    with tabs[3]:
-        st.header("At-Bat Analyzer")
+        with tabs[3]:
+            st.header("At-Bat Analyzer")
 
-        df_player = df_player.sort_values(["GameDate", "GameID", "Inning", "Batter", "PitchNo"]).copy()
+            df_player = df_player.sort_values(["GameDate", "GameID", "Inning", "Batter", "PitchNo"]).copy()
 
 # Identify start of a new AB based on PlayResult or first pitch in new inning/batter combo
-        df_player["is_new_ab"] = (
-            (df_player["PlayResult"].notna()) & (df_player["PlayResult"] != "Undefined")
-        )
+            df_player["is_new_ab"] = (
+                (df_player["PlayResult"].notna()) & (df_player["PlayResult"] != "Undefined")
+            )
 
 # Shift Batter/GameID to find boundaries between ABs
-        df_player["new_ab_flag"] = (
-            (df_player["Batter"] != df_player["Batter"].shift(1)) |
-            (df_player["GameID"] != df_player["GameID"].shift(1)) |
-            (df_player["Inning"] != df_player["Inning"].shift(1)) |
-            (df_player["is_new_ab"])
-        )
+            df_player["new_ab_flag"] = (
+                (df_player["Batter"] != df_player["Batter"].shift(1)) |
+                (df_player["GameID"] != df_player["GameID"].shift(1)) |
+                (df_player["Inning"] != df_player["Inning"].shift(1)) |
+                (df_player["is_new_ab"])
+            )
 
 # Replace NaNs in flag with False
-        df_player["new_ab_flag"] = df_player["new_ab_flag"].fillna(False)
+            df_player["new_ab_flag"] = df_player["new_ab_flag"].fillna(False)
 
 # Assign ABNumber per GameID
-        df_player["ABNumber"] = df_player.groupby("GameID")["new_ab_flag"].cumsum().astype(int)
+            df_player["ABNumber"] = df_player.groupby("GameID")["new_ab_flag"].cumsum().astype(int)
 
 
     # Only show dates where the player actually played
-        available_dates = df_player["GameDate"].dropna().unique()
-        available_dates = sorted(pd.to_datetime(available_dates).dt.strftime("%Y-%m-%d").unique())
+            available_dates = df_player["GameDate"].dropna().unique()
+            available_dates = sorted(pd.to_datetime(available_dates).dt.strftime("%Y-%m-%d").unique())
 
-        selected_date = st.selectbox("Select Game Date", available_dates)
+            selected_date = st.selectbox("Select Game Date", available_dates)
 
     # Filter to just the selected game date
-        df_date = df_player[pd.to_datetime(df_player["GameDate"]).dt.strftime("%Y-%m-%d") == selected_date]
+            df_date = df_player[pd.to_datetime(df_player["GameDate"]).dt.strftime("%Y-%m-%d") == selected_date]
 
     # Create the label for each AB with pitcher name
-        df_date["AB_Label"] = df_date["ABNumber"].astype(str) + " vs " + df_date["Pitcher"]
+            df_date["AB_Label"] = df_date["ABNumber"].astype(str) + " vs " + df_date["Pitcher"]
 
     # Get distinct ABs with labels
-        unique_abs = df_date[["ABNumber", "AB_Label"]].drop_duplicates().sort_values("ABNumber")
+            unique_abs = df_date[["ABNumber", "AB_Label"]].drop_duplicates().sort_values("ABNumber")
 
-        selected_ab_label = st.selectbox("Select At-Bat", unique_abs["AB_Label"].tolist())
+            selected_ab_label = st.selectbox("Select At-Bat", unique_abs["AB_Label"].tolist())
 
     # Extract ABNumber from label
-        selected_ab_number = int(selected_ab_label.split(" vs ")[0])
+            selected_ab_number = int(selected_ab_label.split(" vs ")[0])
 
     # Filter to just that AB
-        df_ab = df_date[df_date["ABNumber"] == selected_ab_number]
+            df_ab = df_date[df_date["ABNumber"] == selected_ab_number]
 
-        st.subheader(f"AB #{selected_ab_number} vs {df_ab['Pitcher'].iloc[0]}")
-        st.write(f"{len(df_ab)} pitches in this AB")
+            st.subheader(f"AB #{selected_ab_number} vs {df_ab['Pitcher'].iloc[0]}")
+            st.write(f"{len(df_ab)} pitches in this AB")
 
 
 
