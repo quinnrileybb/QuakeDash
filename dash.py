@@ -649,18 +649,18 @@ if position == "Batter":
             st.pyplot(fig_ev)
 
         # Sort the player data first
-                df_player = df_player.sort_values(["GameDate", "GameID", "Inning", "PitchNo"]).copy()
+            df_player = df_player.sort_values(["GameDate", "GameID", "Inning", "PitchNo"]).copy()
 
 # Create an AB key that groups together pitches by Game + Inning + Batter + PlateAppearance index
-                df_player["ab_key"] = (
-                    df_player["GameID"].astype(str) + "_" +
-                    df_player["Inning"].astype(str) + "_" +
-                    df_player["Batter"].astype(str) + "_" +
-                    df_player["PAofGame"].astype(str)
+            df_player["ab_key"] = (
+                df_player["GameID"].astype(str) + "_" +
+                df_player["Inning"].astype(str) + "_" +
+                df_player["Batter"].astype(str) + "_" +
+                df_player["PAofGame"].astype(str)
 )
 
 # Now assign an AB number within each GameID
-                df_player["ABNumber"] = df_player.groupby("GameID")["ab_key"].rank(method="dense").astype(int)
+            df_player["ABNumber"] = df_player.groupby("GameID")["ab_key"].rank(method="dense").astype(int)
 
 
 
