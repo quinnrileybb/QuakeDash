@@ -649,18 +649,27 @@ if position == "Batter":
             st.pyplot(fig_ev)
 
         # Sort the player data first
-            df_player = df_player.sort_values(["GameDate", "GameID", "Inning", "PitchNo"]).copy()
+            # Sort by Game, Inning, Pitch order (or timestamp if available)
+                df_player = df_player.sort_values(["GameDate", "GameID", "Inning", "Batter", "PitchNo"]).copy()
 
-# Create an AB key that groups together pitches by Game + Inning + Batter + PlateAppearance index
-            df_player["ab_key"] = (
-                df_player["GameID"].astype(str) + "_" +
-                df_player["Inning"].astype(str) + "_" +
-                df_player["Batter"].astype(str) + "_" +
-                df_player["PAofGame"].astype(str))
+# Identify start of a new AB based on PlayResult or first pitch in new inning/batter combo
+                df_player["is_new_ab"] = (
+                    (df_player["PlayResult"].notna()) & (df_player["PlayResult"] != "Undefined")
+                )
 
+# Shift Batter/GameID to find boundaries between ABs
+                df_player["new_ab_flag"] = (
+                    (df_player["Batter"] != df_player["Batter"].shift(1)) |
+                    (df_player["GameID"] != df_player["GameID"].shift(1)) |
+                    (df_player["Inning"] != df_player["Inning"].shift(1)) |
+                      (df_player["is_new_ab"])
+                )
 
-# Now assign an AB number within each GameID
-            df_player["ABNumber"] = df_player.groupby("GameID")["ab_key"].rank(method="dense").astype(int)
+# Replace NaNs in flag with False
+                df_player["new_ab_flag"] = df_player["new_ab_flag"].fillna(False)
+
+# Assign ABNumber per GameID
+                df_player["ABNumber"] = df_player.groupby("GameID")["new_ab_flag"].cumsum().astype(int)
 
 
 
