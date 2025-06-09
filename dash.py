@@ -1067,7 +1067,7 @@ else:
                 gb = ld = fb = np.nan
             rv_per_100 = (df_pt["run_value"].sum() / total_pt) * 100 if total_pt > 0 else np.nan
             
-                results_list.append({
+            results_list.append({
                 "Pitch Type": pt,
                 "Overall Usage %": round(overall_usage, 1),
                 "Strike%": round(strike_perc, 1),
