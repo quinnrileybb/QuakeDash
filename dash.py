@@ -74,13 +74,48 @@ if position == "Batter":
         batter_data_clean = batter_data[batter_data["PlayResultCleaned"] != "Undefined"]
         
         # --- Add Dropdown to Filter Hitting Data by PitcherThrows ---
-        hitting_filter = st.selectbox("Overall Stats - Filter By Pitcher Handedness", ["Combined", "Left", "Right"])
+        # ----- in with tabs[0] under the Batter branch -----
+
+# Load & clean your batter_data as before…
+
+# ——— Filters side-by-side ———
+        col1, col2 = st.columns(2)
+        with col1:
+            hitting_filter = st.selectbox(
+                "Filter By Pitcher Handedness",
+                ["Combined", "Left", "Right"]
+            )
+        with col2:
+            count_options = [
+                "0 Strikes", "1 Strike", "2 Strikes",
+                "0 Balls",   "1 Ball",   "2 Balls",   "3 Balls"
+            ]
+            selected_counts = st.multiselect(
+                "Filter By Count",
+                count_options,
+                default=count_options
+            )
+
+# — apply handedness —
         if hitting_filter == "Left":
-            hitting_data_clean = batter_data_clean[batter_data_clean["PitcherThrows"] == "Left"].copy()
+            df_filt = batter_data_clean[batter_data_clean["PitcherThrows"] == "Left"]
         elif hitting_filter == "Right":
-            hitting_data_clean = batter_data_clean[batter_data_clean["PitcherThrows"] == "Right"].copy()
+            df_filt = batter_data_clean[batter_data_clean["PitcherThrows"] == "Right"]
         else:
-            hitting_data_clean = batter_data_clean.copy()
+            df_filt = batter_data_clean.copy()
+
+# — apply count filter —
+        strike_counts = [int(s.split()[0]) for s in selected_counts if "Strike" in s]
+        ball_counts   = [int(s.split()[0]) for s in selected_counts if "Ball"  in s]
+
+        hitting_data_clean = hitting_data_clean[
+            hitting_data_clean["Strikes"].isin(strike_counts)
+            | hitting_data_clean["Balls"].isin(ball_counts)
+        ]
+
+# now use df_filt in place of hitting_data_clean for all stats below…
+# …etc
+
     
         # --- Calculate Plate Appearances (PA) and At Bats (AB) ---
         PA = hitting_data_clean.shape[0]
