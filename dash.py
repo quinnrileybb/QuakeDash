@@ -79,6 +79,8 @@ if position == "Batter":
 # Load & clean your batter_data as before…
 
 # ——— Filters side-by-side ———
+
+        hitting_data_clean = batter_data_clean.copy()
         col1, col2 = st.columns(2)
         with col1:
             hitting_filter = st.selectbox(
@@ -95,14 +97,14 @@ if position == "Batter":
                 count_options,
                 default=count_options
             )
-
+        
 # — apply handedness —
         if hitting_filter == "Left":
-            batter_data_clean = batter_data_clean[batter_data_clean["PitcherThrows"] == "Left"]
+            hitter_data_clean = hitter_data_clean[hitter_data_clean["PitcherThrows"] == "Left"]
         elif hitting_filter == "Right":
-            batter_data_clean = batter_data_clean[batter_data_clean["PitcherThrows"] == "Right"]
+            hitter_data_clean = hitter_data_clean[hitter_data_clean["PitcherThrows"] == "Right"]
         else:
-            batter_data_clean = batter_data_clean.copy()
+            hitter_data_clean = hitter_data_clean.copy()
 
 # — apply count filter —
         strike_counts = [int(s.split()[0]) for s in selected_counts if "Strike" in s]
