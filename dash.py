@@ -132,10 +132,7 @@ if position == "Batter":
         all_batters.loc[all_batters["KorBB"].isin(["Strikeout", "Walk"]), "PlayResultCleaned"] = all_batters["KorBB"]
         all_batters_clean = all_batters[all_batters["PlayResultCleaned"] != "Undefined"]
         league_PA = all_batters_clean.shape[0]
-        league_wOBA = all_batters_clean["PlayResultCleaned"].apply(lambda x: woba_weights.get(x, 0)).sum() / league_PA if league_PA > 0 else 0
-    
-        # --- Compute wOBA+ for the Selected Batter ---
-        wOBA_plus = 100 * (wOBA / league_wOBA) if league_wOBA > 0 else 0
+        
     
         # --- Build and Style the Hitter Stats Table ---
         hitter_stats = {
@@ -148,7 +145,6 @@ if position == "Batter":
             "SLG": [round(SLG, 3)],
             "OPS": [round(OPS, 3)],
             "wOBA": [round(wOBA, 3)],
-            "wOBA+": [round(wOBA_plus, 1)],
             "K Rate (%)": [round(K_rate, 1)],
             "BB Rate (%)": [round(BB_rate, 1)]
         }
@@ -961,9 +957,9 @@ else:
         df_player_filtered['run_value'] = df_player_filtered['play_by_play'].apply(get_run_value)
 
         # Step 2 for Results Table: Compute Metrics & Build Table using filtered data.
+        all_calls = set(df_player_filtered["PitchCall"].unique())
+        strike_set = all_calls - {"BallCalled"}
         strike_zone = {"x_min": -0.83, "x_max": 0.83, "z_min": 1.5, "z_max": 3.5}
-        strike_set = {"Strike Looking", "StrikeSwinging", "InPlay", "FoulBallNotFieldable",
-                      "FoulBallFieldable", "FoulBall", "AutomaticStrike"}
         swing_set = {"StrikeSwinging", "InPlay", "FoulBallNotFieldable", "FoulBallFieldable", "FoulBall"}
         chase_set = {"StrikeSwinging", "InPlay", "FoulBallNotFieldable", "FoulBallFieldable", "FoulBall"}
         zone = {"x_min": -0.83, "x_max": 0.83, "z_min": 1.5, "z_max": 3.5}
@@ -1006,8 +1002,9 @@ else:
                 fps = (strikes_00 / total_00) * 100
             else:
                 fps = np.nan
-            strikes_all = df_pt[df_pt["PitchCall"].isin(strike_set)].shape[0]
-            strike_perc = (strikes_all / total_pt) * 100
+
+            strikes = df_pt["PitchCall"].isin(strike_set).sum()
+            strike_perc = (strikes / len(df_pt)) * 100
             df_pt_zone = df_pt[(df_pt["PlateLocSide"] >= strike_zone["x_min"]) & (df_pt["PlateLocSide"] <= strike_zone["x_max"]) &
                                (df_pt["PlateLocHeight"] >= strike_zone["z_min"]) & (df_pt["PlateLocHeight"] <= strike_zone["z_max"])]
             zone_perc = (len(df_pt_zone) / total_pt) * 100
@@ -1053,7 +1050,6 @@ else:
             results_list.append({
                 "Pitch Type": pt,
                 "Overall Usage %": round(overall_usage, 1),
-                "FPS%": round(fps, 1) if not np.isnan(fps) else np.nan,
                 "Strike%": round(strike_perc, 1),
                 "Zone%": round(zone_perc, 1),
                 "Whiff%": round(whiff_perc, 1) if not np.isnan(whiff_perc) else np.nan,
