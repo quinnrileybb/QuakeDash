@@ -886,7 +886,7 @@ else:
             "RelSide": "{:.1f}"
         }))
 
-         col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2)
                 with col1:
                     handedness_options = ["Combined", "Left", "Right"]
                     selected_handedness = st.selectbox("Filter by Batter Handedness", handedness_options)
