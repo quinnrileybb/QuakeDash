@@ -1046,7 +1046,40 @@ else:
             else:
                 gb = ld = fb = np.nan
             rv_per_100 = (df_pt["run_value"].sum() / total_pt) * 100 if total_pt > 0 else np.nan
-            results_list.append({
+
+            col1, col2 = st.columns(2)
+                with col1:
+                    handedness_options = ["Combined", "Left", "Right"]
+                    selected_handedness = st.selectbox("Filter by Batter Handedness", handedness_options)
+                with col2:
+                    count_options = [
+                        "0 Strikes", "1 Strike", "2 Strikes",
+                        "0 Balls",   "1 Ball",   "2 Balls",   "3 Balls"
+                    ]
+    # default to all counts checked
+                    selected_counts = st.multiselect("Filter by Count", count_options, default=count_options)
+
+# ——— Apply the handedness filter ———
+                if selected_handedness == "Left":
+                    df_player_filtered = df_player[df_player["BatterSide"] == "Left"].copy()
+                elif selected_handedness == "Right":
+                    df_player_filtered = df_player[df_player["BatterSide"] == "Right"].copy()
+                else:
+                    df_player_filtered = df_player.copy()
+
+# ——— Apply the count filter ———
+# parse out which numeric strikes and balls were selected
+                strike_counts = [int(s.split()[0]) for s in selected_counts if "Strike" in s]
+                ball_counts  = [int(s.split()[0]) for s in selected_counts if "Ball" in s]
+
+# keep any row that matches either a selected strikes OR a selected balls
+                if strike_counts or ball_counts:
+                    df_player_filtered = df_player_filtered[
+                        df_player_filtered["Strikes"].isin(strike_counts)
+                        | df_player_filtered["Balls"].isin(ball_counts)
+                    ]
+            
+                results_list.append({
                 "Pitch Type": pt,
                 "Overall Usage %": round(overall_usage, 1),
                 "Strike%": round(strike_perc, 1),
