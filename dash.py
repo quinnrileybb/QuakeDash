@@ -957,8 +957,7 @@ else:
         df_player_filtered['run_value'] = df_player_filtered['play_by_play'].apply(get_run_value)
 
         # Step 2 for Results Table: Compute Metrics & Build Table using filtered data.
-        all_calls = set(df_player_filtered["PitchCall"].unique())
-        strike_set = all_calls - {"BallCalled"}
+        strike_set = {"StrikeSwinging", "StrikeCalled", "AutomaticStrike", "FoulBallFieldable", "FoulBallNotFieldable", "FoulBall", "InPlay"}
         strike_zone = {"x_min": -0.83, "x_max": 0.83, "z_min": 1.5, "z_max": 3.5}
         swing_set = {"StrikeSwinging", "InPlay", "FoulBallNotFieldable", "FoulBallFieldable", "FoulBall"}
         chase_set = {"StrikeSwinging", "InPlay", "FoulBallNotFieldable", "FoulBallFieldable", "FoulBall"}
