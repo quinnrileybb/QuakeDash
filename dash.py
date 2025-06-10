@@ -196,7 +196,6 @@ if position == "Batter":
             "SLG": "{:.3f}",
             "OPS": "{:.3f}",
             "wOBA": "{:.3f}",
-            "wOBA+": "{:.1f}",
             "K Rate (%)": "{:.1f}",
             "BB Rate (%)": "{:.1f}"
         })
@@ -550,6 +549,25 @@ if position == "Batter":
     
     # Assume df_player contains the pitch-level data for the hitter (adjust as needed)
         df_player = batter_data.copy()
+
+    # ——— Count filter ———
+        count_options = [
+            "0 Strikes", "1 Strike", "2 Strikes",
+            "0 Balls",   "1 Ball",   "2 Balls",   "3 Balls"
+        ]
+        selected_counts = st.multiselect(
+            "Filter by Count",
+            count_options,
+            default=count_options
+        )
+        strike_counts = [int(x.split()[0]) for x in selected_counts if "Strike" in x]
+        ball_counts   = [int(x.split()[0]) for x in selected_counts if "Ball"   in x]
+
+    # apply count filter
+        df_player = df_player[
+            df_player["Strikes"].isin(strike_counts)
+            | df_player["Balls"].isin(ball_counts)
+        ]
     
     # Define a set of outcomes that indicate a swing.
         swing_set = {"StrikeSwinging", "InPlay", "FoulBallFieldable", "FoulBallNotFieldable", "FoulBall"}
