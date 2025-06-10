@@ -542,152 +542,95 @@ if position == "Batter":
         })
         st.dataframe(ev_df_styled)
 
-
+    from matplotlib.patches import Rectangle
+    
     with tabs[1]:
         st.header("Heatmaps")
         st.markdown("#### Pitch Heatmaps by Category")
-    
-    # Assume df_player contains the pitch-level data for the hitter (adjust as needed)
-        df_player = batter_data.copy()
 
-    # ——— Count filter ———
-        count_options = [
-            "0 Strikes", "1 Strike", "2 Strikes",
-            "0 Balls",   "1 Ball",   "2 Balls",   "3 Balls"
-        ]
-        selected_counts = st.multiselect(
-            "Filter by Count",
-            count_options,
-            default=count_options
-        )
-        strike_counts = [int(x.split()[0]) for x in selected_counts if "Strike" in x]
-        ball_counts   = [int(x.split()[0]) for x in selected_counts if "Ball"   in x]
+    # base df
+        df_player = batter_data.copy().dropna(subset=["PlateLocSide","PlateLocHeight"])
+
+    # ——— Filters ———
+        col1, col2, col3 = st.columns(3)
+        with col1:
+        # Count filter
+            count_options = [
+                "0 Strikes","1 Strike","2 Strikes",
+                "0 Balls","1 Ball","2 Balls","3 Balls"
+            ]
+            selected_counts = st.multiselect("Filter by Count", count_options, default=count_options)
+        with col2:
+        # Handedness filter
+            handed_opts = ["Overall","RHP","LHP"]
+            handed_sel = st.selectbox("Filter by Pitcher Handedness", handed_opts)
+        with col3:
+        # Heatmap type filter
+            map_opts = ["Swings","Whiffs","Hard Hit","Softly Hit","Chases","Called Strikes"]
+            map_sel = st.selectbox("Select Heatmap", map_opts)
 
     # apply count filter
+        strike_counts = [int(x.split()[0]) for x in selected_counts if "Strike" in x]
+        ball_counts   = [int(x.split()[0]) for x in selected_counts if "Ball"   in x]
         df_player = df_player[
-            df_player["Strikes"].isin(strike_counts)
-            | df_player["Balls"].isin(ball_counts)
+            df_player["Strikes"].isin(strike_counts) |
+            df_player["Balls"].isin(ball_counts)
         ]
-    
-    # Define a set of outcomes that indicate a swing.
-        swing_set = {"StrikeSwinging", "InPlay", "FoulBallFieldable", "FoulBallNotFieldable", "FoulBall"}
-    
+
+    # apply handedness
+        if handed_sel == "RHP":
+            df_player = df_player[df_player["PitcherThrows"]=="Right"]
+        elif handed_sel == "LHP":
+            df_player = df_player[df_player["PitcherThrows"]=="Left"]
+
+    # define row filter for the selected heatmap
+        swing_set = {"StrikeSwinging","InPlay","FoulBallFieldable","FoulBallNotFieldable","FoulBall"}
         row_filters = {
-            "RHP Swings": lambda df: df[(df["PitcherThrows"] == "Right") & (df["PitchCall"].isin(swing_set))],
-            "LHP Swings": lambda df: df[(df["PitcherThrows"] == "Left") & (df["PitchCall"].isin(swing_set))],
-            "RHP Whiffs": lambda df: df[(df["PitcherThrows"] == "Right") & (df["PitchCall"] == "StrikeSwinging")],
-            "LHP Whiffs": lambda df: df[(df["PitcherThrows"] == "Left") & (df["PitchCall"] == "StrikeSwinging")],
-            "RHP Hard Hit": lambda df: df[(df["PitcherThrows"] == "Right") & (df["PitchCall"] == "InPlay") & (df["ExitSpeed"] > 95)],
-            "LHP Hard Hit": lambda df: df[(df["PitcherThrows"] == "Left") & (df["PitchCall"] == "InPlay") & (df["ExitSpeed"] > 95)],
-            "RHP Softly Hit": lambda df: df[(df["PitcherThrows"] == "Right") & (df["PitchCall"] == "InPlay") & (df["ExitSpeed"] < 80)],
-            "LHP Softly Hit": lambda df: df[(df["PitcherThrows"] == "Left") & (df["PitchCall"] == "InPlay") & (df["ExitSpeed"] < 80)],
-            "RHP Chases": lambda df: df[
-                (df["PitcherThrows"] == "Right") & 
-                (df["PitchCall"].isin(swing_set)) & 
-                ~((df["PlateLocSide"] >= -0.83) & (df["PlateLocSide"] <= 0.83) & 
-                (df["PlateLocHeight"] >= 1.5) & (df["PlateLocHeight"] <= 3.5))
-            ],
-            "LHP Chases": lambda df: df[
-                (df["PitcherThrows"] == "Left") & 
-                (df["PitchCall"].isin(swing_set)) & 
-                ~((df["PlateLocSide"] >= -0.83) & (df["PlateLocSide"] <= 0.83) & 
-                (df["PlateLocHeight"] >= 1.5) & (df["PlateLocHeight"] <= 3.5))
-            ],
-            "RHP Called Strikes": lambda df: df[(df["PitcherThrows"] == "Right") & (df["PitchCall"] == "StrikeCalled")],
-            "LHP Called Strikes": lambda df: df[(df["PitcherThrows"] == "Left") & (df["PitchCall"] == "StrikeCalled")]
+            "Swings":       lambda df: df[df["PitchCall"].isin(swing_set)],
+            "Whiffs":       lambda df: df[df["PitchCall"]=="StrikeSwinging"],
+            "Hard Hit":     lambda df: df[(df["PitchCall"]=="InPlay") & (df["ExitSpeed"]>95)],
+            "Softly Hit":   lambda df: df[(df["PitchCall"]=="InPlay") & (df["ExitSpeed"]<80)],
+            "Chases":       lambda df: df[
+                                 df["PitchCall"].isin(swing_set) &
+                                 ~((df["PlateLocSide"].between(-0.83,0.83)) &
+                                   (df["PlateLocHeight"].between(1.5,3.5)))
+                             ],
+            "Called Strikes": lambda df: df[df["PitchCall"]=="StrikeCalled"]
         }
+        df_event = row_filters[map_sel](df_player)
 
-        row_totals = {row_name: len(func(df_player)) for row_name, func in row_filters.items()}
-    
-    
+    # column filters (pitch categories)
         col_filters = {
-            "Overall": lambda df: df,
-            "Fastball": lambda df: df[(df["AutoPitchType"].isin(["Four-Seam", "Sinker"])) | (df["RelSpeed"] > 85)],
-            "Breaking Ball": lambda df: df[df["AutoPitchType"].isin(["Slider", "Curveball", "Cutter"])],
-            "Offspeed": lambda df: df[df["AutoPitchType"].isin(["Splitter", "Changeup"])]
+            "Overall":      lambda df: df,
+            "Fastball":     lambda df: df[(df["AutoPitchType"].isin(["Four-Seam","Sinker"])) | (df["RelSpeed"]>85)],
+            "Breaking Ball":lambda df: df[df["AutoPitchType"].isin(["Slider","Curveball","Cutter"])],
+            "Offspeed":     lambda df: df[df["AutoPitchType"].isin(["Splitter","Changeup"])]
         }
-        col_names = ["Overall", "Fastball", "Breaking Ball", "Offspeed"]
-    
-    # -------------------------
-    # Build the Grid of Heatmaps
-    # -------------------------
-        n_rows = len(row_filters)       # 12 rows
-        n_cols = len(col_names)          # 4 columns
-    
-    # Create subplots grid
-        fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols * 3, n_rows * 3), constrained_layout=True)
-    
-    # Ensure axs is a 2D array even if there's only one row/column.
-        if n_rows == 1:
-            axs = np.expand_dims(axs, axis=0)
-        if n_cols == 1:
-            axs = np.expand_dims(axs, axis=1)
-    
-    # Loop over each row (event filter) and each column (pitch category)
-        # inside for row_idx, (row_name, row_func) …
-        for row_idx, (row_name, row_func) in enumerate(row_filters.items()):
-            for col_idx, col_name in enumerate(col_names):
-                ax = axs[row_idx, col_idx]
+        col_names = list(col_filters.keys())
 
-        # 1) apply the row filter to df_player
-                df_row = row_func(df_player)
+    # 1×4 grid
+        fig, axs = plt.subplots(1, len(col_names), figsize=(len(col_names)*3, 3), constrained_layout=True)
+        for i, cat in enumerate(col_names):
+            ax = axs[i]
+            df_cell = col_filters[cat](df_event)[["PlateLocSide","PlateLocHeight"]].dropna().astype(float)
+            if len(df_cell) < 3:
+                ax.text(0.5,0.5,"No Data",ha="center",va="center",transform=ax.transAxes)
+            else:
+                sns.kdeplot(
+                    data=df_cell, x="PlateLocSide", y="PlateLocHeight",
+                    ax=ax, fill=True, cmap="Reds", bw_adjust=0.5, levels=5, thresh=0.05
+                )
+        # draw strike zone
+            rect = Rectangle(
+                (-0.83,1.5), 1.66, 2.0,
+                fill=False, edgecolor="black", linewidth=2
+            )
+            ax.add_patch(rect)
+            ax.set(xlim=(-2.5,2.5), ylim=(0.5,5), xticks=[], yticks=[])
+            ax.set_title(cat, fontsize=10)
 
-        # 2) apply the column filter to that result
-                df_cell = col_filters[col_name](df_row)
-
-        # 3) now df_cell exists, so you can pull out PlateLocSide/PlateLocHeight
-                df_plot = df_cell[['PlateLocSide','PlateLocHeight']].dropna().astype(float)
-                
-                min_points = 3
-
-# 3) scatter-fallback or KDE
-                if df_plot.shape[0] == 0:
-    # truly no points
-                    ax.text(0.5, 0.5, "No Data",
-                        ha='center', va='center', transform=ax.transAxes)
-                elif df_plot.shape[0] < min_points \
-                     or df_plot['PlateLocSide'].nunique() < 3 \
-                     or df_plot['PlateLocHeight'].nunique() < 3:
-    # not enough for KDE, but at least one point → plot raw red dots
-                    ax.scatter(
-                        df_plot['PlateLocSide'],
-                        df_plot['PlateLocHeight'],
-                        c='red',
-                        s=30,
-                        marker='o',
-                        alpha=0.8
-                    )
-                else:
-                    sns.kdeplot(
-                        data=df_plot,
-                        x="PlateLocSide",
-                        y="PlateLocHeight",
-                        ax=ax,
-                        fill=True,
-                        cmap="Reds",
-                        bw_adjust=0.5,
-                        levels=5,
-                        thresh=0.05,
-                    )
-
-# 4) then redraw your strike zone and axis cleanup as before
-                sz_x = [-0.83, 0.83, 0.83, -0.83, -0.83]
-                sz_y = [1.5, 1.5, 3.5, 3.5, 1.5]
-                ax.plot(sz_x, sz_y, color="black", linewidth=2)
-                ax.set_xlim(-2.5, 2.5)
-                ax.set_ylim(0.5, 5)
-                ax.set_xticks([])
-                ax.set_yticks([])
-                ax.set_xlabel("")
-                ax.set_ylabel("")
-                ax.set_title(col_name, fontsize=10)
-            
-            # For the leftmost column, label the row with the event name.
-                if col_idx == 0:
-                    ax.text(-0.3, 0.5, row_name, transform=ax.transAxes,
-                            rotation=0, va="center", ha="center", fontsize=10)
-    
         st.pyplot(fig)
+
 
     with tabs[2]:
         st.header("Visuals")
