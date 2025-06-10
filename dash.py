@@ -741,7 +741,7 @@ if position == "Batter":
                     sub["Angle"],
                     sub["ExitSpeed"],
                     label=outcome,
-                    color=col,
+                    color=color,
                     alpha=0.6,
                     s=20
                 )
