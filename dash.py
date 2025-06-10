@@ -692,6 +692,7 @@ if position == "Batter":
             ax_la.set_ylabel("Density")
             ax_la.set_xlim(-50, 100)
             st.pyplot(fig_la)
+            
         
         with row1_col2:
             st.subheader("Exit Velocity Density")
@@ -710,11 +711,8 @@ if position == "Batter":
             ax_ev.set_ylabel("Density")
             st.pyplot(fig_ev)
 
-        # Sort the player data first
-            # Sort by Game, Inning, Pitch order (or timestamp if available)
-
+        
         with row2_col1: 
-                # third visual: EV vs LA scatter by outcome
             st.subheader("Exit Velocity vs Launch Angle by Outcome")
     # pick off-ball events
             vis_df = batter_data.copy()
@@ -752,8 +750,7 @@ if position == "Batter":
             st.pyplot(plt.gcf())
             plt.clf()
 
-        with row2_col2: 
-            
+        with row2_col2:            
             st.subheader("Pitch Movement & Outcome")
             mv = batter_data.copy().dropna(subset=["HorzBreak","InducedVertBreak"])
 
