@@ -947,6 +947,53 @@ if position == "Batter":
     # --- Batted Ball Direction Table ---
             st.subheader("Batted Ball Direction")
             bb_data = df_pl[df_pl["PitchCall"] == "InPlay"].copy()
+
+    # Count
+            total_bb = len(bb_data)
+
+            if total_bb > 0:
+        # Average launch angle
+                avg_la = bb_data["Angle"].mean()
+
+        # Sweetspot % (8°–32°)
+                sweet_count = bb_data["Angle"].between(8, 32).sum()
+                sweet_pct   = sweet_count / total_bb * 100
+
+        # Classify batted-ball types
+                def classify_la(la):
+                    if la < 10:   return "GroundBall"
+                    if la < 25:   return "LineDrive"
+                    if la < 50:   return "FlyBall"
+                    return "Popup"
+
+                bb_data["BattedBallType"] = bb_data["Angle"].apply(classify_la)
+                valid = bb_data["BattedBallType"].notna().sum()
+                gb_pct = bb_data["BattedBallType"].eq("GroundBall").sum() / valid * 100 if valid>0 else np.nan
+                ld_pct = bb_data["BattedBallType"].eq("LineDrive").sum() / valid * 100 if valid>0 else np.nan
+                fb_pct = bb_data["BattedBallType"].eq("FlyBall").sum() / valid * 100 if valid>0 else np.nan
+            else:
+                avg_la = sweet_pct = gb_pct = ld_pct = fb_pct = np.nan
+
+            bb_row = {
+                "Count":         total_bb,
+                "Avg LA":        round(avg_la, 1) if not np.isnan(avg_la) else np.nan,
+                "LA Sweetspot%": round(sweet_pct, 1) if not np.isnan(sweet_pct) else np.nan,
+                "GB%":           round(gb_pct, 1) if not np.isnan(gb_pct) else np.nan,
+                "LD%":           round(ld_pct, 1) if not np.isnan(ld_pct) else np.nan,
+                "FB%":           round(fb_pct, 1) if not np.isnan(fb_pct) else np.nan
+            }
+
+            bb_df = pd.DataFrame([bb_row])
+            st.dataframe(
+                bb_df.style.format({
+                    "Count": "{:.0f}",
+                    "Avg LA": "{:.1f}",
+                    "LA Sweetspot%": "{:.1f}",
+                    "GB%": "{:.1f}",
+                    "LD%": "{:.1f}",
+                    "FB%": "{:.1f}"
+                })
+    )
     # (insert existing Batted Ball Direction code, using bb_data)
 
     # --- Exit Velocity Table ---
