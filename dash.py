@@ -823,7 +823,6 @@ if position == "Batter":
 
     # --- Plate Discipline Table ---
                 # --- Basic Hitting Stats ---
-            st.subheader("Basic Hitting Stats")
 
     # Clean and filter
             stats_df = df_pl.copy()
@@ -889,7 +888,6 @@ if position == "Batter":
             )
 
     # (insert existing Plate Discipline code, using pd_data)
-            st.subheader("Plate Discipline")
 
             pd_data = df_pl.copy()
             strike_zone = {"x_min": -0.83, "x_max": 0.83, "z_min": 1.5, "z_max": 3.5}
@@ -945,7 +943,6 @@ if position == "Batter":
             st.dataframe(plate_discipline_styled)
 
     # --- Batted Ball Direction Table ---
-            st.subheader("Batted Ball Direction")
             bb_data = df_pl[df_pl["PitchCall"] == "InPlay"].copy()
 
     # Count
@@ -995,7 +992,6 @@ if position == "Batter":
                 }))
 
     # --- Exit Velocity Table ---
-            st.subheader("Exit Velocity")
             ev_data = df_pl[df_pl["PitchCall"]=="InPlay"].copy()
             count = len(ev_data)
             if count>0 and "ExitSpeed" in ev_data.columns:
