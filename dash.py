@@ -1052,9 +1052,6 @@ if position == "Batter":
                 plate_appearance_groups = filtered_data.groupby((filtered_data['PitchofPA'] == 1).cumsum())
                 num_pa = len(plate_appearance_groups)
 
-        # load logo image once (e.g. using PIL)
-                from PIL import Image
-                logo_img = Image.open("Penn-Quakers-Symbol.png")
 
                 fig = plt.figure(figsize=(15, 8.5))
                 gs  = GridSpec(3, 5, figure=fig, width_ratios=[1.5,1.5,1.5,1,1.5], height_ratios=[1,1,1])
