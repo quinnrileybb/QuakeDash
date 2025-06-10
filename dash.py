@@ -889,6 +889,60 @@ if position == "Batter":
             )
 
     # (insert existing Plate Discipline code, using pd_data)
+            st.subheader("Plate Discipline")
+
+            pd_data = df_pl.copy()
+            strike_zone = {"x_min": -0.83, "x_max": 0.83, "z_min": 1.5, "z_max": 3.5}
+            swing_set   = {"StrikeSwinging", "InPlay", "FoulBallFieldable", "FoulBallNotFieldable", "FoulBall"}
+            contact_set = {"InPlay", "FoulBall", "FoulBallFieldable", "FoulBallNotFieldable"}
+
+            total_pitches = len(pd_data)
+            swings_total  = pd_data["PitchCall"].isin(swing_set).sum()
+            swing_pct     = swings_total / total_pitches * 100 if total_pitches>0 else np.nan
+
+            bip_total     = pd_data["PitchCall"].eq("InPlay").sum()
+
+            in_zone       = pd_data[
+                pd_data["PlateLocSide"].between(strike_zone["x_min"], strike_zone["x_max"]) &
+                pd_data["PlateLocHeight"].between(strike_zone["z_min"], strike_zone["z_max"])
+            ]
+            z_count       = len(in_zone)
+            z_swings      = in_zone["PitchCall"].isin(swing_set).sum()
+            z_swing_pct   = z_swings / z_count * 100 if z_count>0 else np.nan
+
+            out_zone      = pd_data.drop(in_zone.index)
+            o_swings      = out_zone["PitchCall"].isin(swing_set).sum()
+            chase_pct     = o_swings / len(out_zone) * 100 if len(out_zone)>0 else np.nan
+
+            total_contacts = pd_data["PitchCall"].isin(contact_set).sum()
+            whiff_count    = swings_total - total_contacts
+            whiff_pct      = whiff_count / swings_total * 100 if swings_total>0 else np.nan
+
+            z_whiff_pct    = (z_swings - in_zone["PitchCall"].isin(contact_set).sum()) / z_swings * 100 \
+                                if z_swings>0 else np.nan
+
+            pd_row = {
+                "Category":      "Overall",
+                "Count":         total_pitches,
+                "Balls in Play": bip_total,
+                "Swing %":       round(swing_pct,1),
+                "Z-Swing %":     round(z_swing_pct,1) if not np.isnan(z_swing_pct) else np.nan,
+                "Chase %":       round(chase_pct,1)   if not np.isnan(chase_pct)   else np.nan,
+                "Whiff %":       round(whiff_pct,1)   if not np.isnan(whiff_pct)   else np.nan,
+                "Z-Whiff %":     round(z_whiff_pct,1) if not np.isnan(z_whiff_pct) else np.nan
+            }
+
+            plate_discipline_df = pd.DataFrame([pd_row])
+            plate_discipline_styled = plate_discipline_df.style.format({
+                "Count": "{:.0f}",
+                "Balls in Play": "{:.0f}",
+                "Swing %": "{:.1f}",
+                "Z-Swing %": "{:.1f}",
+                "Chase %": "{:.1f}",
+                "Whiff %": "{:.1f}",
+                "Z-Whiff %": "{:.1f}"
+            })
+            st.dataframe(plate_discipline_styled)
 
     # --- Batted Ball Direction Table ---
             st.subheader("Batted Ball Direction")
