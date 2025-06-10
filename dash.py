@@ -673,9 +673,10 @@ if position == "Batter":
 
     with tabs[2]:
         st.header("Visuals")
+        
         col1, col2 = st.columns(2)
     
-        with row1_col1:
+        with col1:
             st.subheader("Launch Angle Density")
         # Create a figure for Launch Angle Density
             fig_la, ax_la = plt.subplots(figsize=(6, 4))
@@ -694,7 +695,7 @@ if position == "Batter":
             st.pyplot(fig_la)
             
         
-        with row1_col2:
+        with col2:
             st.subheader("Exit Velocity Density")
         # Create a figure for Exit Velocity Density
             fig_ev, ax_ev = plt.subplots(figsize=(6, 4))
@@ -711,6 +712,7 @@ if position == "Batter":
             ax_ev.set_ylabel("Density")
             st.pyplot(fig_ev)
 
+        row2_col1, row2_col2 = st.columns(2)
         
         with row2_col1: 
             st.subheader("Exit Velocity vs Launch Angle by Outcome")
