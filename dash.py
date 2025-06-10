@@ -1125,7 +1125,22 @@ else:
             df_inplay    = df_pt[df_pt["PitchCall"]=="InPlay"]
             woba_con     = df_inplay["PlayResult"].map(lambda x: woba_wts.get(x,0)).sum() / len(df_inplay) if len(df_inplay)>0 else np.nan
             hard_hit_pct = df_inplay["ExitSpeed"].ge(95).sum() / len(df_inplay) * 100 if len(df_inplay)>0 else np.nan
-
+            
+            if len(df_inplay)>0 and "Angle" in df_inplay:
+                df_bb = df_inplay.assign(
+                    BattedBallType=lambda d: d["Angle"].apply(
+                        lambda la: "GroundBall" if la<10
+                                   else "LineDrive" if la<25
+                                   else "FlyBall" if la<50
+                                   else "Popup"
+                    )
+                )
+                valid = df_bb["BattedBallType"].notna().sum()
+                gb = df_bb["BattedBallType"].eq("GroundBall").sum()/valid*100 if valid>0 else np.nan
+                ld = df_bb["BattedBallType"].eq("LineDrive").sum()/valid*100 if valid>0 else np.nan
+                fb = df_bb["BattedBallType"].eq("FlyBall").sum()/valid*100 if valid>0 else np.nan
+            else:
+                gb = ld = fb = np.nan
     # batted-ball types
             if "Angle" in df_inplay.columns and len(df_inplay)>0:
                 # --- compute overall GB/LD/FB on all InPlay batted balls ---
