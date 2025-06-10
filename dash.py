@@ -1022,143 +1022,170 @@ if position == "Batter":
             }))
 
 
+
+
+
+
+
+        
         with tabs[4]:
             st.header("Hitter Postgame Report")
 
-    # Make a local copy of your full DataFrame
+    # Prepare data
             data = batter_data.copy()
-
-    # --- Standardize & prepare data ---
-            data['AutoPitchType'] = data['AutoPitchType'].str.strip().str.capitalize()
-            if 'Date' in data.columns:
-                data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
-                data = data.dropna(subset=['Date'])
-                data['Date'] = data['Date'].dt.strftime('%Y-%m-%d')
-
-    # --- Dropdowns for date & batter ---
-            unique_dates = sorted(data['Date'].unique())
+            data['Date'] = pd.to_datetime(data['Date'], errors='coerce').dt.strftime('%Y-%m-%d')
+            unique_dates = sorted(data['Date'].dropna().unique())
             default_date = unique_dates[-1] if unique_dates else None
-            selected_date   = st.selectbox("Select a Date", options=unique_dates, index=unique_dates.index(default_date) if default_date else 0)
-            filtered_data   = data[data['Date'] == selected_date] if selected_date else data
-            unique_batters  = sorted(filtered_data['Batter'].unique())
-            selected_batter = st.selectbox("Select a Batter", options=unique_batters)
-
+            selected_date = st.selectbox(
+                "Select a Date",
+                options=unique_dates,
+                index=unique_dates.index(default_date) if default_date else 0
+            )
+            filtered_data = data[data['Date'] == selected_date] if selected_date else data
+            batters = sorted(filtered_data['Batter'].unique())
+            selected_batter = st.selectbox("Select a Batter", batters)
             if selected_batter:
                 filtered_data = filtered_data[filtered_data['Batter'] == selected_batter]
 
-    # --- Plot per-PA spray charts and summary table ---
             if not filtered_data.empty:
-        # group by plate appearance
-                plate_appearance_groups = filtered_data.groupby((filtered_data['PitchofPA'] == 1).cumsum())
-                num_pa = len(plate_appearance_groups)
+                from matplotlib.gridspec import GridSpec
 
-        # table container
+        # Group by plate appearance
+                pa_groups = filtered_data.groupby((filtered_data['PitchofPA'] == 1).cumsum())
+
+        # Build figure + GridSpec
+                fig = plt.figure(figsize=(15, 8.5))
+                gs  = GridSpec(3, 5, figure=fig,
+                               width_ratios =[1.5,1.5,1.5,1,1.5],
+                               height_ratios=[1,1,1])
+                gs.update(wspace=0.2, hspace=0.3)
+
+        # Create the 3×3 axes for the first 9 PAs
+                axes = []
+                for i in range(min(len(pa_groups), 9)):
+                    ax = fig.add_subplot(gs[i//3, i%3])
+                    ax.set_xlim(-1.5, 1.5)
+                    ax.set_ylim(1, 4)
+                    ax.set_xticks([]); ax.set_yticks([])
+                    ax.set_aspect(1)
+                    axes.append(ax)
+
+        # Build table data
                 table_data = []
 
-        # zone rectangles
-                strike_zone_width = 17/12
-                sz = {
-                    'x_start': -strike_zone_width/2,
-                    'y_start': 1.5,
-                    'width':   strike_zone_width,
-                    'height':  3.3775-1.5
-                }
-                heart = {
-                    'x_start': sz['x_start']+sz['width']*0.25,
-                    'y_start': sz['y_start']+sz['height']*0.25,
-                    'width':   sz['width']*0.5,
-                    'height':  sz['height']*0.5
-                }
-                shadow = {
-                    'x_start': sz['x_start']-0.2,
-                    'y_start': sz['y_start']-0.2,
-                    'width':   sz['width']+0.4,
-                    'height':  sz['height']+0.4
-                }
-
-        # palettes
+        # Palettes & markers
                 pitch_call_palette = {
                     'StrikeCalled':'orange','BallCalled':'green','BallinDirt':'green',
-                    'Foul':'tan','InPlay':'blue','FoulBallNotFieldable':'tan',
-                    'StrikeSwinging':'red','BallIntentional':'purple','FoulBallFieldable':'tan',
-                    'HitByPitch':'lime'
+                    'Foul':'tan','InPlay':'blue','StrikeSwinging':'red',
+                    'BallIntentional':'purple','HitByPitch':'lime'
                 }
                 pitch_type_markers = {
                     'Fastball':'o','Curveball':'s','Slider':'^','Changeup':'D'
                 }
 
-        # loop PAs
-                for i,(pa_id, pa_data) in enumerate(plate_appearance_groups, start=1):
-                    if i>9: break
+        # Plot each PA
+                for i, (pa_id, pa) in enumerate(pa_groups, start=1):
+                    if i > 9: break
                     ax = axes[i-1]
-                    pitcher_throws = pa_data.iloc[0]['PitcherThrows']
-                    label_h = 'RHP' if pitcher_throws=='Right' else 'LHP'
-                    pitcher_name  = pa_data.iloc[0]['Pitcher']
-                    ax.set_title(f'PA {i} vs {label_h}', fontsize=14, fontweight='bold')
-                    ax.text(0.5, -0.12, f'P: {pitcher_name}', fontsize=10, fontstyle='italic', ha='center', transform=ax.transAxes)
-            # draw zones
-                    ax.add_patch(plt.Rectangle((shadow['x_start'],shadow['y_start']), shadow['width'],shadow['height'], fill=False, color='gray', linestyle='--', linewidth=2))
-                    ax.add_patch(plt.Rectangle((sz['x_start'],sz['y_start']), sz['width'],sz['height'], fill=False, color='black', linewidth=2))
-                    ax.add_patch(plt.Rectangle((heart['x_start'],heart['y_start']), heart['width'],heart['height'], fill=False, color='red', linestyle='--', linewidth=2))
+            # Annotate title and pitcher
+                    side = 'RHP' if pa.iloc[0]['PitcherThrows']=='Right' else 'LHP'
+                    name = pa.iloc[0]['Pitcher']
+                    ax.set_title(f'PA {i} vs {side}', fontsize=14, fontweight='bold')
+                    ax.text(0.5, -0.12, f'P: {name}',
+                            fontsize=10, fontstyle='italic',
+                            ha='center', transform=ax.transAxes)
 
-                    pa_rows=[]
-                    for _,row in pa_data.iterrows():
-                        sns.scatterplot(x=[row['PlateLocSide']], y=[row['PlateLocHeight']],
-                                        hue=[row['PitchCall']], palette=pitch_call_palette,
-                                        marker=pitch_type_markers.get(row['AutoPitchType'],'o'),
-                                        s=150, legend=False, ax=ax)
-                        offset = -0.05 if row['AutoPitchType']=='Slider' else 0
-                        ax.text(row['PlateLocSide'], row['PlateLocHeight']+offset, f"{int(row['PitchofPA'])}",
-                                color='white', fontsize=8, ha='center', va='center', weight='bold')
-                        if row.name==pa_data.index[-1]:
-                            outcome_x = next((res for res in [row['PlayResult'],row['KorBB'],row['PitchCall']] if res!="Undefined"),"Undefined")
+            # Draw strike, heart, and shadow zones
+                    sz_w = 17/12
+                    zones = {
+                        'shadow':(-sz_w/2-0.2,1.3,sz_w+0.4,3.6-1.3,'gray','--'),
+                        'strike':(-sz_w/2,1.5,sz_w,3.3775-1.5,'black','-'),
+                        'heart': ( -sz_w/2+sz_w*0.25, 
+                                   1.5 + (3.3775-1.5)*0.25,
+                                   sz_w*0.5,(3.3775-1.5)*0.5,
+                                   'red','--')
+                    }
+                    for x,y,w,h,c,ls in zones.values():
+                        ax.add_patch(plt.Rectangle((x,y),w,h,fill=False,edgecolor=c,linestyle=ls,linewidth=2))
+
+            # Collect pitch rows
+                    pa_rows = []
+                    for _, r in pa.iterrows():
+                        sns.scatterplot(
+                            x=[r['PlateLocSide']],
+                            y=[r['PlateLocHeight']],
+                            hue=[r['PitchCall']],
+                            palette=pitch_call_palette,
+                            marker=pitch_type_markers.get(r['AutoPitchType'],'o'),
+                            s=150, legend=False, ax=ax
+                        )
+                        offset = -0.05 if r['AutoPitchType']=='Slider' else 0
+                        ax.text(r['PlateLocSide'], r['PlateLocHeight']+offset,
+                                str(int(r['PitchofPA'])),
+                                color='white', fontsize=8,
+                                ha='center', va='center', weight='bold')
+
+                # Only label outcome on last pitch
+                        if r.name == pa.index[-1]:
+                            outcome = next((x for x in [r['PlayResult'],r['KorBB'],r['PitchCall']] if x!="Undefined"), "Undefined")
                         else:
-                            outcome_x = row['PitchCall']
-                        pitch_speed = f"{round(row['RelSpeed'],1)} MPH"
-                        pitch_type  = row['AutoPitchType']
-                        pa_rows.append([f"Pitch {int(row['PitchofPA'])}", f"{pitch_speed} {pitch_type}", outcome_x])
-                    table_data.append([f'PA {i}', '', ''])
+                            outcome = r['PitchCall']
+                        speed = f"{round(r['RelSpeed'],1)} MPH"
+                        ptype = r['AutoPitchType']
+                        pa_rows.append([f"Pitch {int(r['PitchofPA'])}", f"{speed} {ptype}", outcome])
+
+                    table_data.append([f"PA {i}", "", ""])
                     table_data.extend(pa_rows)
 
-        # legends
-                legend_ax=fig.add_subplot(gs[2,:2]); legend_ax.axis('off')
-                h1=[plt.Line2D([0],[0],marker='o',color='w',markerfacecolor=c,markersize=6,label=l) for l,c in pitch_call_palette.items()]
-                l1=legend_ax.legend(handles=h1,title='Pitch Call',loc='lower left',bbox_to_anchor=(1,-0.3),fontsize=10,title_fontsize=12)
-                h2=[plt.Line2D([0],[0],marker=m,color='black',markersize=6,linestyle='',label=l) for l,m in pitch_type_markers.items()]
-                l2=legend_ax.legend(handles=h2,title='Pitch Type',loc='lower left',bbox_to_anchor=(0.6,-0.3),fontsize=10,title_fontsize=12)
+        # Legends
+                legend_ax = fig.add_subplot(gs[2, :2])
+                legend_ax.axis('off')
+                h1 = [plt.Line2D([0],[0],marker='o',color='w',markerfacecolor=c,markersize=6,label=l)
+                      for l,c in pitch_call_palette.items()]
+                l1 = legend_ax.legend(handles=h1, title='Pitch Call',
+                                     loc='lower left', bbox_to_anchor=(1,-0.3),
+                                     fontsize=10, title_fontsize=12)
+                h2 = [plt.Line2D([0],[0],marker=m,color='black',
+                                 markersize=6,linestyle='',label=l)
+                      for l,m in pitch_type_markers.items()]
+                l2 = legend_ax.legend(handles=h2, title='Pitch Type',
+                                     loc='lower left', bbox_to_anchor=(0.6,-0.3),
+                                     fontsize=10, title_fontsize=12)
                 legend_ax.add_artist(l1)
 
-        # table
-                ax_table=fig.add_subplot(gs[:,3:]); ax_table.axis('off')
-                y=1.0; x=0.05
+        # Table panel
+                ax_table = fig.add_subplot(gs[:, 3:])
+                ax_table.axis('off')
+                y = 1.0; x = 0.05
                 for row in table_data:
-                    if row[0].startswith('PA'):
-                        ax_table.text(x,y,row[0],fontsize=10,fontweight='bold',fontstyle='italic')
-                        ax_table.axhline(y-0.01,color='black',linewidth=1)
-                        y-=0.05
+                    if row[0].startswith("PA"):
+                        ax_table.text(x, y, row[0], fontsize=10,
+                                      fontweight='bold', fontstyle='italic')
+                        ax_table.axhline(y-0.01, color='black', linewidth=1)
+                        y -= 0.05
                     else:
-                        ax_table.text(x,y,f"  {row[0]}  |  {row[1]}  |  {row[2]}",fontsize=7)
-                        y-=0.04
+                        text = f"  {row[0]}  |  {row[1]}  |  {row[2]}"
+                        ax_table.text(x, y, text, fontsize=7)
+                        y -= 0.04
 
-                fig.suptitle(f"{selected_batter} Report for {selected_date}", fontsize=18, weight='bold')
-
-        # postgame stats line
-                whiffs      = filtered_data['PitchCall'].eq('StrikeSwinging').sum()
-                hard_hits   = filtered_data[(filtered_data['PitchCall']=='InPlay')&(filtered_data['ExitSpeed']>=95)].shape[0]
-                barrels     = filtered_data[(filtered_data['ExitSpeed']>=95)&(filtered_data['Angle'].between(10,35))].shape[0]
-                swing_calls = ['Foul','InPlay','StrikeSwinging','FoulBallFieldable','FoulBallNotFieldable']
-                chase_count = filtered_data[filtered_data['PitchCall'].isin(swing_calls)&(
-                                  ~filtered_data['PlateLocSide'].between(-0.7083,0.7083)|
-                                  ~filtered_data['PlateLocHeight'].between(1.5,3.3775)
-                              )].shape[0]
-                fig.text(0.5,0.93,f"Whiffs: {whiffs}    Hard Hit: {hard_hits}    Barrels: {barrels}    Chase: {chase_count}",fontsize=12,ha='center')
-
-        # logo
+        # Title and postgame stats line
+                fig.suptitle(f"{selected_batter} Report for {selected_date}",
+                             fontsize=18, weight='bold')
+                whiffs    = filtered_data['PitchCall'].eq('StrikeSwinging').sum()
+                hard_hits = filtered_data.query("PitchCall=='InPlay' and ExitSpeed>=95").shape[0]
+                barrels   = filtered_data.query("ExitSpeed>=95 and Angle.between(10,35)").shape[0]
+                swing_calls = ["Foul","InPlay","StrikeSwinging","FoulBallFieldable","FoulBallNotFieldable"]
+                chase_count = filtered_data.query("PitchCall in @swing_calls").loc[
+                    lambda d: ~d["PlateLocSide"].between(-0.7083,0.7083) |
+                      ~d["PlateLocHeight"].between(1.5,3.3775)
+                ].shape[0]
+                fig.text(0.5, 0.93,
+                         f"Whiffs: {whiffs}    Hard Hits: {hard_hits}    Barrels: {barrels}    Chase: {chase_count}",
+                         fontsize=12, ha='center')
 
                 st.pyplot(fig)
             else:
                 st.write("No data available for the selected filters.")
-
 
 
 else:
