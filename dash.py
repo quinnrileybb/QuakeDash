@@ -1170,7 +1170,7 @@ else:
             
             results_list.append({
                 "Pitch Type": pt,
-                "Count": total_pt,
+                "Count": total_all,
                 "Overall Usage %": round(overall_usage, 1),
                 "Strike%": round(strike_perc, 1),
                 "Zone%": round(zone_perc, 1),
@@ -1247,7 +1247,7 @@ else:
         overall_avg = {
             "Pitch Type": "Overall Average",
             "Overall Usage %": round(overall_usage_all, 1),
-            "Count": total_pt,
+            "Count": total_all,
             "Strike%": round(strike_perc_all, 1),
             "Zone%": round(zone_perc_all, 1),
             "Whiff%": round(whiff_perc_all, 1) if not np.isnan(whiff_perc_all) else np.nan,
@@ -1268,7 +1268,7 @@ else:
 
         results_df_styled = results_df.style.format({
             "Overall Usage %": "{:.1f}",
-            "Count": "{:.1f}",
+            "Count": "{:.0f}",
             "Strike%": "{:.1f}",
             "Zone%": "{:.1f}",
             "Whiff%": "{:.1f}",
