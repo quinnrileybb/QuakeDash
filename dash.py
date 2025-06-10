@@ -1052,15 +1052,6 @@ if position == "Batter":
                 plate_appearance_groups = filtered_data.groupby((filtered_data['PitchofPA'] == 1).cumsum())
                 num_pa = len(plate_appearance_groups)
 
-
-        # build PA spray charts
-                axes = []
-                for i in range(min(num_pa, 9)):
-                    ax = fig.add_subplot(gs[i//3, i%3])
-                    ax.set_xlim(-1.5,1.5); ax.set_ylim(1,4)
-                    ax.set_xticks([]); ax.set_yticks([]); ax.set_aspect(1)
-                    axes.append(ax)
-
         # table container
                 table_data = []
 
@@ -1163,7 +1154,6 @@ if position == "Batter":
                 fig.text(0.5,0.93,f"Whiffs: {whiffs}    Hard Hit: {hard_hits}    Barrels: {barrels}    Chase: {chase_count}",fontsize=12,ha='center')
 
         # logo
-                logo_ax=fig.add_axes([0.80,0.92,0.10,0.10]); logo_ax.imshow(logo_img); logo_ax.axis('off')
 
                 st.pyplot(fig)
             else:
