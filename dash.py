@@ -100,11 +100,11 @@ if position == "Batter":
         
 # — apply handedness —
         if hitting_filter == "Left":
-            hitter_data_clean = hitter_data_clean[hitter_data_clean["PitcherThrows"] == "Left"]
+            hitting_data_clean = hitting_data_clean[hitting_data_clean["PitcherThrows"] == "Left"]
         elif hitting_filter == "Right":
-            hitter_data_clean = hitter_data_clean[hitter_data_clean["PitcherThrows"] == "Right"]
+            hitting_data_clean = hitting_data_clean[hitting_data_clean["PitcherThrows"] == "Right"]
         else:
-            hitter_data_clean = hitter_data_clean.copy()
+            hitting_data_clean = hitter_data_clean.copy()
 
 # — apply count filter —
         strike_counts = [int(s.split()[0]) for s in selected_counts if "Strike" in s]
