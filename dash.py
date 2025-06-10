@@ -1241,6 +1241,9 @@ else:
             "Chase%":"{:.1f}",
             "Wobacon":"{:.3f}",
             "Hard Hit%":"{:.1f}",
+            "GB%":"{:.1f}",
+            "LD%":"{:.1f}",
+            "FB%":"{:.1f}",
             "RV/100":"{:.1f}"
         }
         st.subheader("Results")
