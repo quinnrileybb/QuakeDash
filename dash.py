@@ -1128,17 +1128,21 @@ else:
 
     # batted-ball types
             if "Angle" in df_inplay.columns and len(df_inplay)>0:
-                df_bb = df_inplay.assign(
-                    BattedBallType=df_inplay["Angle"].apply(
-                        lambda la: "GroundBall" if la<10 else "LineDrive" if la<25 else "FlyBall" if la<50 else "Popup"
-                    )
+                # --- compute overall GB/LD/FB on all InPlay batted balls ---
+                df_bb_all = (
+                    df_player_filtered[df_player_filtered["PitchCall"]=="InPlay"]
+                      .assign(BattedBallType=lambda d: d["Angle"].apply(
+                          lambda la: "GroundBall" if la<10
+                                     else "LineDrive" if la<25
+                                     else "FlyBall" if la<50
+                                     else "Popup"
+                      ))
                 )
-                valid = df_bb["BattedBallType"].notna().sum()
-                gb = df_bb["BattedBallType"].eq("GroundBall").sum()/valid*100 if valid>0 else np.nan
-                ld = df_bb["BattedBallType"].eq("LineDrive").sum()/valid*100 if valid>0 else np.nan
-                fb = df_bb["BattedBallType"].eq("FlyBall").sum()/valid*100 if valid>0 else np.nan
-            else:
-                gb = ld = fb = np.nan
+                valid_all = df_bb_all["BattedBallType"].notna().sum()
+                gb_all = df_bb_all["BattedBallType"].eq("GroundBall").sum()/valid_all*100 if valid_all>0 else np.nan
+                ld_all = df_bb_all["BattedBallType"].eq("LineDrive").sum()/valid_all*100 if valid_all>0 else np.nan
+                fb_all = df_bb_all["BattedBallType"].eq("FlyBall").sum()/valid_all*100 if valid_all>0 else np.nan
+
 
             rv_per_100 = df_pt["run_value"].sum()/total_pt*100 if total_pt>0 else np.nan
 
@@ -1217,9 +1221,9 @@ else:
                                     ["ExitSpeed"].ge(95).sum()/
                                   df_player_filtered[df_player_filtered["PitchCall"]=="InPlay"].shape[0]*100,1
                               ) if total_all>0 else np.nan,
-            "GB%":             np.nan,  # leave blank or compute similarly if you want
-            "LD%":             np.nan,
-            "FB%":             np.nan,
+            "GB%":             round(gb_all, 1),  # leave blank or compute similarly if you want
+            "LD%":             round(gb_all, 1,
+            "FB%":             round(gb_all, 1,
             "RV/100":          round(df_player_filtered["run_value"].sum()/total_all*100,1) if total_all>0 else np.nan
         }
 
