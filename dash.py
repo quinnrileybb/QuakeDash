@@ -626,7 +626,7 @@ if position == "Batter":
                 fill=False, edgecolor="black", linewidth=2
             )
             ax.add_patch(rect)
-            ax.set(xlim=(-2.5,2.5), ylim=(0.5,5), xticks=[], yticks=[])
+            ax.set(xlim=(-2.5,2.5), ylim=(0.5,5), xticks=[], yticks=[], xlabel="", ylabel="")
             ax.set_title(cat, fontsize=10)
 
         st.pyplot(fig)
