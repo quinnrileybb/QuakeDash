@@ -778,6 +778,8 @@ if position == "Batter":
                            c=color, s=20, alpha=0.7, label=outcome)
             ax.axhline(0, linestyle="--", color="black")
             ax.axvline(0, linestyle="--", color="black")
+            ax.xlabel("Launch Angle")
+            ax.ylabel("Exit Velocity")
             ax.set_ylim(-25, 25)
             ax.set_xlim(-25, 25)
             ax.set(xlabel="Horizontal Break", ylabel="Induced Vertical Break")
