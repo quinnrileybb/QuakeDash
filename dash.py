@@ -112,7 +112,7 @@ if position == "Batter":
 
         hitting_data_clean = hitting_data_clean[
             hitting_data_clean["Strikes"].isin(strike_counts)
-            | hitting_data_clean["Balls"].isin(ball_counts)
+            & hitting_data_clean["Balls"].isin(ball_counts)
         ]
 
 # now use df_filt in place of hitting_data_clean for all stats below…
@@ -237,7 +237,7 @@ if position == "Batter":
         ball_counts   = [int(s.split()[0]) for s in selected_counts if "Ball"  in s]
 
         pd_data = pd_data[
-            pd_data["Strikes"].isin(strike_counts) |
+            pd_data["Strikes"].isin(strike_counts) &
             pd_data["Balls"].isin(ball_counts)
         ]
 
