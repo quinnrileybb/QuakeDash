@@ -766,7 +766,7 @@ if position == "Batter":
                 selected_throws = st.selectbox("Filter by Pitcher Throws", throws_options)
             with count_col:
                 count_options = ["0 Strikes", "1 Strike", "2 Strikes", "0 Balls", "1 Ball", "2 Balls", "3 Balls"]
-                selected_counts = st.multiselect("Filter by Count", count_options, default=count_options)
+                selected_counts = st.multiselect("Filter by Count", count_options, default=count_options, key="hitter_counts")
 
     # apply category filter
             if selected_category == "Fastball":
