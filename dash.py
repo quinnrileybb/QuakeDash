@@ -1016,7 +1016,7 @@ else:
         if strike_counts or ball_counts:
             df_player_filtered = df_player_filtered[
                 df_player_filtered["Strikes"].isin(strike_counts)
-                | df_player_filtered["Balls"].isin(ball_counts)
+                & df_player_filtered["Balls"].isin(ball_counts)
             ]
         df_player_filtered['play_by_play'] = np.where(df_player_filtered['PlayResult'] != 'Undefined',
                                                        df_player_filtered['PlayResult'],
