@@ -1053,10 +1053,6 @@ if position == "Batter":
                 num_pa = len(plate_appearance_groups)
 
 
-                fig = plt.figure(figsize=(15, 8.5))
-                gs  = GridSpec(3, 5, figure=fig, width_ratios=[1.5,1.5,1.5,1,1.5], height_ratios=[1,1,1])
-                gs.update(wspace=0.2, hspace=0.3)
-
         # build PA spray charts
                 axes = []
                 for i in range(min(num_pa, 9)):
