@@ -1170,6 +1170,7 @@ else:
             
             results_list.append({
                 "Pitch Type": pt,
+                "Count": total_pt,
                 "Overall Usage %": round(overall_usage, 1),
                 "Strike%": round(strike_perc, 1),
                 "Zone%": round(zone_perc, 1),
@@ -1251,7 +1252,7 @@ else:
             "Zone%": round(zone_perc_all, 1),
             "Whiff%": round(whiff_perc_all, 1) if not np.isnan(whiff_perc_all) else np.nan,
             "Zone-Whiff%": round(zone_whiff_perc_all, 1) if not np.isnan(zone_whiff_perc_all) else np.nan,
-            "CSW%": round(csw_perc_all, 1),
+            "CSW%": round(df_player_filtered["PitchCall"].isin({"StrikeCalled","StrikeSwinging","AutomaticStrike"}).sum() / total_all * 100, 1)
             "Chase%": round(chase_perc_all, 1) if not np.isnan(chase_perc_all) else np.nan,
             "Wobacon": round(wobacon_all, 1) if not np.isnan(wobacon_all) else np.nan,
             "Hard Hit%": round(hard_hit_perc_all, 1) if not np.isnan(hard_hit_perc_all) else np.nan,
