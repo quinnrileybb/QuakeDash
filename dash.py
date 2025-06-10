@@ -735,7 +735,7 @@ if position == "Batter":
             }
 
             plt.figure(figsize=(6,4))
-            for outcome, col in color_map.items():
+            for outcome, color in color_map.items():
                 sub = vis_df[vis_df["OutcomeGroup"] == outcome]
                 plt.scatter(
                     sub["Angle"],
@@ -745,11 +745,12 @@ if position == "Batter":
                     alpha=0.6,
                     s=20
                 )
+
+            plt.xlim(-100, 100) 
+            plt.ylim(0, 120)
             plt.xlabel("Launch Angle")
             plt.ylabel("Exit Velocity (mph)")
             plt.title("EV vs LA by Batted-Ball Outcome")
-            plt.set_xlim(-100, 100) 
-            plt.set_ylim(0, 120)
             plt.legend(title="Outcome", fontsize="small", frameon=False)
             st.pyplot(plt.gcf())
             plt.clf()
