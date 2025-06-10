@@ -759,13 +759,13 @@ if position == "Batter":
                     return "Whiff"
                 if row["PitchCall"] == "InPlay" and row.get("ExitSpeed", 0) < 80:
                     return "SoftHit"
-            if row["PlayResultCleaned"] in ["Double","Triple","HomeRun"] or row.get("ExitSpeed",0) >= 95:
-                    return "Hard/Extra"
-            return None
+                if row["PlayResultCleaned"] in ["Double","Triple","HomeRun"] or row.get("ExitSpeed",0) >= 95:
+                    return "Hard Hit/XBH"
+                return None
 
             mv["Outcome"] = mv.apply(classify, axis=1)
             mv = mv.dropna(subset=["Outcome"])
-            colormap = {"SoftHit":"blue","Whiff":"red","Hard/Extra":"green"}
+            colormap = {"SoftHit":"blue","Whiff":"red","Hard Hit/XBH":"green"}
 
             fig, ax = plt.subplots(figsize=(6,4))
             for outcome, color in colormap.items():
