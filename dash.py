@@ -758,9 +758,9 @@ if position == "Batter":
                 if row["PitchCall"] == "StrikeSwinging":
                     return "Whiff"
                 if row["PitchCall"] == "InPlay" and row.get("ExitSpeed", 0) < 80:
-                return "SoftHit"
+                    return "SoftHit"
             if row["PlayResultCleaned"] in ["Double","Triple","HomeRun"] or row.get("ExitSpeed",0) >= 95:
-                return "Hard/Extra"
+                    return "Hard/Extra"
             return None
 
             mv["Outcome"] = mv.apply(classify, axis=1)
