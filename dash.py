@@ -1174,9 +1174,9 @@ else:
                 "Chase%":          round(chase_pct,1) if not np.isnan(chase_pct) else np.nan,
                 "Wobacon":         round(woba_con,3) if not np.isnan(woba_con) else np.nan,
                 "Hard Hit%":       round(hard_hit_pct,1) if not np.isnan(hard_hit_pct) else np.nan,
-                "GB%":             round(gb_all,1) if not np.isnan(gb_all) else np.nan,
-                "LD%":             round(ld_all,1) if not np.isnan(ld_all) else np.nan,
-                "FB%":             round(fb_all,1) if not np.isnan(fb_all) else np.nan,
+                "GB%":             round(gb,1) if not np.isnan(gb) else np.nan,
+                "LD%":             round(ld,1) if not np.isnan(ld) else np.nan,
+                "FB%":             round(fb,1) if not np.isnan(fb) else np.nan,
                 "RV/100":          round(rv_per_100,1) if not np.isnan(rv_per_100) else np.nan
             })
 
