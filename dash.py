@@ -58,7 +58,7 @@ if position == "Batter":
     st.header("Hitters Section")
     
     # Create tabs for the hitter section: Data, Heatmaps, Visuals, Models.
-    tabs = st.tabs(["Data", "Heatmaps", "Visuals", "At-Bat Analyzer"])
+    tabs = st.tabs(["Data", "Heatmaps", "Visuals", "Pitch Level Analyzer"])
     
     with tabs[0]:
         st.subheader("2025 Hitting Data")
@@ -751,7 +751,93 @@ if position == "Batter":
 
 
         with tabs[3]:
-            st.header("At-Bat Analyzer")
+            st.header("Pitch Level Analyzer")
+
+    # Base df
+            df_pl = batter_data.copy()
+
+    # --- Three dropdown filters: Pitch Category, Pitcher Throws, Count ---
+            cat_col, hand_col, count_col = st.columns(3)
+            with cat_col:
+                category_options = ["Overall", "Fastball", "Breaking Ball", "Offspeed"]
+                selected_category = st.selectbox("Filter by Pitch Category", category_options)
+            with hand_col:
+                throws_options = ["Combined", "Left", "Right"]
+                selected_throws = st.selectbox("Filter by Pitcher Throws", throws_options)
+            with count_col:
+                count_options = ["0 Strikes", "1 Strike", "2 Strikes", "0 Balls", "1 Ball", "2 Balls", "3 Balls"]
+                selected_counts = st.multiselect("Filter by Count", count_options, default=count_options)
+
+    # apply category filter
+            if selected_category == "Fastball":
+                df_pl = df_pl[(df_pl["AutoPitchType"].isin(["Four-Seam","Sinker"])) | (df_pl["RelSpeed"] > 85)]
+            elif selected_category == "Breaking Ball":
+                df_pl = df_pl[df_pl["AutoPitchType"].isin(["Slider","Curveball","Cutter"])]
+            elif selected_category == "Offspeed":
+                df_pl = df_pl[df_pl["AutoPitchType"].isin(["Splitter","Changeup"])]
+    # else "Overall" leaves df_pl unchanged
+
+    # apply throws filter
+            if selected_throws == "Left":
+                df_pl = df_pl[df_pl["PitcherThrows"] == "Left"]
+            elif selected_throws == "Right":
+                df_pl = df_pl[df_pl["PitcherThrows"] == "Right"]
+
+    # apply count filter (AND logic)
+            sc = [int(x.split()[0]) for x in selected_counts if "Strike" in x]
+            bc = [int(x.split()[0]) for x in selected_counts if "Ball"   in x]
+            if sc or bc:
+                df_pl = df_pl[df_pl["Strikes"].isin(sc) & df_pl["Balls"].isin(bc)]
+
+    # --- Six pitcher-level sliders ---
+            def slider_range(df, col, label):
+                vals = df[col].dropna()
+                if vals.empty:
+                    return (0, 1)
+                lo, hi = float(vals.min()), float(vals.max())
+                return st.slider(label, round(lo - 0.5, 1), round(hi + 0.5, 1), (round(lo, 1), round(hi, 1)))
+
+            s1, s2, s3, s4 = st.columns(4)
+            with s1:
+                velo_range = slider_range(df_pl, "RelSpeed", "Velocity (MPH)")
+                spin_range = slider_range(df_pl, "SpinRate", "Spin Rate")
+            with s2:
+                ivb_range  = slider_range(df_pl, "InducedVertBreak", "Induced Vertical Break")
+                hb_range   = slider_range(df_pl, "HorzBreak", "Horizontal Break")
+            with s3:
+                vaa_range  = slider_range(df_pl, "VertApprAngle", "Vertical Approach Angle")
+                haa_range  = slider_range(df_pl, "HorzApprAngle", "Horizontal Approach Angle")
+            with s4:
+                rh_range   = slider_range(df_pl, "RelHeight", "Release Height")
+                rs_range   = slider_range(df_pl, "RelSide", "Release Side")
+
+    # apply slider filters
+            df_pl = df_pl[
+                df_pl["RelSpeed"].between(*velo_range) &
+                df_pl["SpinRate"].between(*spin_range) &
+                df_pl["InducedVertBreak"].between(*ivb_range) &
+                df_pl["HorzBreak"].between(*hb_range) &
+                df_pl["VertApprAngle"].between(*vaa_range) &
+                df_pl["HorzApprAngle"].between(*haa_range) &
+                df_pl["RelHeight"].between(*rh_range) &
+                df_pl["RelSide"].between(*rs_range)
+            ]
+
+    # --- Plate Discipline Table ---
+            st.subheader("Plate Discipline")
+            pd_data = df_pl.copy()
+    # (insert existing Plate Discipline code, using pd_data)
+
+    # --- Batted Ball Direction Table ---
+            st.subheader("Batted Ball Direction")
+            bb_data = df_pl[df_pl["PitchCall"] == "InPlay"].copy()
+    # (insert existing Batted Ball Direction code, using bb_data)
+
+    # --- Exit Velocity Table ---
+            st.subheader("Exit Velocity")
+            ev_data = df_pl[df_pl["PitchCall"] == "InPlay"].copy()
+    # (insert existing Exit Velocity code, using ev_data)
+
 
 
 
