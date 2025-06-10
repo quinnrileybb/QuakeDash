@@ -992,16 +992,39 @@ if position == "Batter":
                     "GB%": "{:.1f}",
                     "LD%": "{:.1f}",
                     "FB%": "{:.1f}"
-                })
-    )
-    # (insert existing Batted Ball Direction code, using bb_data)
+                }))
 
     # --- Exit Velocity Table ---
             st.subheader("Exit Velocity")
-            ev_data = df_pl[df_pl["PitchCall"] == "InPlay"].copy()
-    # (insert existing Exit Velocity code, using ev_data)
+            ev_data = df_pl[df_pl["PitchCall"]=="InPlay"].copy()
+            count = len(ev_data)
+            if count>0 and "ExitSpeed" in ev_data.columns:
+                avg_ev = ev_data["ExitSpeed"].mean()
+                p90_ev = np.percentile(ev_data["ExitSpeed"].dropna(),90)
+                max_ev = ev_data["ExitSpeed"].max()
+                hard_hit_pct = ev_data["ExitSpeed"].ge(95).sum()/count*100
+                woba_con = ev_data["PlayResultCleaned"].apply(
+                    lambda x: woba_wts.get(x,0)
+                ).sum()/count
+            else:
+                avg_ev=p90_ev=max_ev=hard_hit_pct=woba_con=np.nan
 
-
+            ev_row = {
+                "Count": count,
+                "Avg EV": avg_ev,
+                "90th Percentile EV": p90_ev,
+                "Max EV": max_ev,
+                "Hard Hit%": hard_hit_pct,
+                "wOBAcon": woba_con
+            }
+            st.dataframe(pd.DataFrame([ev_row]).style.format({
+                "Count":"{:.0f}",
+                "Avg EV":"{:.1f}",
+                "90th Percentile EV":"{:.1f}",
+                "Max EV":"{:.1f}",
+                "Hard Hit%":"{:.1f}",
+                "wOBAcon":"{:.3f}"
+            }))
 
 
 else:
