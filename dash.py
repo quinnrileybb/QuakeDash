@@ -675,7 +675,7 @@ if position == "Batter":
         st.header("Visuals")
         col1, col2 = st.columns(2)
     
-        with col1:
+        with row1_col1:
             st.subheader("Launch Angle Density")
         # Create a figure for Launch Angle Density
             fig_la, ax_la = plt.subplots(figsize=(6, 4))
@@ -693,7 +693,7 @@ if position == "Batter":
             ax_la.set_xlim(-50, 100)
             st.pyplot(fig_la)
         
-        with col2:
+        with row1_col2:
             st.subheader("Exit Velocity Density")
         # Create a figure for Exit Velocity Density
             fig_ev, ax_ev = plt.subplots(figsize=(6, 4))
@@ -712,7 +712,77 @@ if position == "Batter":
 
         # Sort the player data first
             # Sort by Game, Inning, Pitch order (or timestamp if available)
+
+        with row2_col1: 
+                # third visual: EV vs LA scatter by outcome
+            st.subheader("Exit Velocity vs Launch Angle by Outcome")
+    # pick off-ball events
+            vis_df = batter_data.copy()
+            vis_df = vis_df[vis_df["PlayResultCleaned"]
+                     .isin(["Out","Single","Double","Triple","HomeRun"])]
+            vis_df = vis_df.dropna(subset=["ExitSpeed","Angle"])
+
+    # map doubles+triples → “ExtraBase”
+            vis_df["OutcomeGroup"] = vis_df["PlayResultCleaned"].map(
+                lambda x: "ExtraBase" if x in ["Double","Triple"] else x
+            )
+
+            color_map = {
+                "Out":       "blue",
+                "Single":    "yellow",
+                "ExtraBase": "orange",
+                "HomeRun":   "green"
+            }
+
+            plt.figure(figsize=(6,4))
+            for outcome, col in color_map.items():
+                sub = vis_df[vis_df["OutcomeGroup"] == outcome]
+                plt.scatter(
+                    sub["Angle"],
+                    sub["ExitSpeed"],
+                    label=outcome,
+                    color=col,
+                    alpha=0.6,
+                    s=20
+                )
+            plt.xlabel("Launch Angle")
+            plt.ylabel("Exit Velocity (mph)")
+            plt.title("EV vs LA by Batted-Ball Outcome")
+            plt.legend(title="Outcome", fontsize="small", frameon=False)
+            st.pyplot(plt.gcf())
+            plt.clf()
+
+        with row2_col2: 
             
+            st.subheader("Pitch Movement & Outcome")
+            mv = batter_data.copy().dropna(subset=["HorzBreak","InducedVertBreak"])
+
+            def classify(row):
+                if row["PitchCall"] == "StrikeSwinging":
+                    return "Whiff"
+                if row["PitchCall"] == "InPlay" and row.get("ExitSpeed", 0) < 80:
+                return "SoftHit"
+            if row["PlayResultCleaned"] in ["Double","Triple","HomeRun"] or row.get("ExitSpeed",0) >= 95:
+                return "Hard/Extra"
+            return None
+
+            mv["Outcome"] = mv.apply(classify, axis=1)
+            mv = mv.dropna(subset=["Outcome"])
+            colormap = {"SoftHit":"blue","Whiff":"red","Hard/Extra":"green"}
+
+            fig, ax = plt.subplots(figsize=(6,4))
+            for outcome, color in colormap.items():
+                sub = mv[mv["Outcome"] == outcome]
+                ax.scatter(sub["HorzBreak"], sub["InducedVertBreak"],
+                           c=color, s=20, alpha=0.7, label=outcome)
+            ax.axhline(0, linestyle="--", color="black")
+            ax.axvline(0, linestyle="--", color="black")
+            ax.set(xlabel="Horizontal Break", ylabel="Induced Vertical Break")
+            ax.legend(title="Outcome", fontsize="small", frameon=False)
+            st.pyplot(fig)
+            plt.clf()
+            
+
 
 
         with tabs[3]:
