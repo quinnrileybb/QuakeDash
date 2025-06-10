@@ -920,7 +920,6 @@ if position == "Batter":
                                 if z_swings>0 else np.nan
 
             pd_row = {
-                "Category":      "Overall",
                 "Count":         total_pitches,
                 "Balls in Play": bip_total,
                 "Swing %":       round(swing_pct,1),
