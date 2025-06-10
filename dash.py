@@ -241,8 +241,6 @@ if position == "Batter":
             pd_data["Balls"].isin(ball_counts)
         ]
 
-# …now use pd_data for all your swing%, whiff%, etc. calculations…
-
     
         # Define strike zone boundaries.
         strike_zone = {"x_min": -0.83, "x_max": 0.83, "z_min": 1.5, "z_max": 3.5}
@@ -824,8 +822,72 @@ if position == "Batter":
             ]
 
     # --- Plate Discipline Table ---
-            st.subheader("Plate Discipline")
-            pd_data = df_pl.copy()
+                # --- Basic Hitting Stats ---
+            st.subheader("Basic Hitting Stats")
+
+    # Clean and filter
+            stats_df = df_pl.copy()
+            stats_df["PlayResultCleaned"] = stats_df["PlayResult"]
+            stats_df.loc[stats_df["KorBB"].isin(["Strikeout","Walk"]), "PlayResultCleaned"] = stats_df["KorBB"]
+            stats_df = stats_df[stats_df["PlayResultCleaned"] != "Undefined"]
+
+    # Compute rate stats
+            PA      = len(stats_df)
+            AB      = stats_df[~stats_df["PlayResultCleaned"].isin(["Walk","HitByPitch","Sacrifice"])].shape[0]
+            hits    = stats_df["PlayResultCleaned"].isin(["Single","Double","Triple","HomeRun"]).sum()
+            HRs     = stats_df["PlayResultCleaned"].eq("HomeRun").sum()
+            BA      = hits/AB if AB>0 else 0
+            walks   = stats_df["PlayResultCleaned"].eq("Walk").sum()
+            HBP     = stats_df["PlayResultCleaned"].eq("HitByPitch").sum()
+            OBP     = (hits+walks+HBP)/PA if PA>0 else 0
+            singles = stats_df["PlayResultCleaned"].eq("Single").sum()
+            doubles = stats_df["PlayResultCleaned"].eq("Double").sum()
+            triples = stats_df["PlayResultCleaned"].eq("Triple").sum()
+            total_bases = singles + 2*doubles + 3*triples + 4*HRs
+            SLG     = total_bases/AB if AB>0 else 0
+            OPS     = OBP + SLG
+
+            woba_wts = {
+                "Out":0.00, "Strikeout":0.00, "Walk":0.69, "HitByPitch":0.72,
+                "Single":0.88, "Double":1.247, "Triple":1.578, "HomeRun":2.031
+            }
+            woba_num = stats_df["PlayResultCleaned"].map(lambda x: woba_wts.get(x,0)).sum()
+            wOBA     = woba_num/PA if PA>0 else 0
+
+            K_rate   = stats_df["PlayResultCleaned"].eq("Strikeout").sum()/PA*100 if PA>0 else 0
+            BB_rate  = walks/PA*100 if PA>0 else 0
+
+    # Build and display table
+            basic_stats = pd.DataFrame({
+                "PA": [PA],
+                "AB": [AB],
+                "Hits": [hits],
+                "HR": [HRs],
+                "BA": [round(BA,3)],
+                "OBP": [round(OBP,3)],
+                "SLG": [round(SLG,3)],
+                "OPS": [round(OPS,3)],
+                "wOBA": [round(wOBA,3)],
+                "K Rate (%)": [round(K_rate,1)],
+                "BB Rate (%)": [round(BB_rate,1)]
+            })
+
+            st.dataframe(
+                basic_stats.style.format({
+                    "PA": "{:.0f}",
+                    "AB": "{:.0f}",
+                    "Hits": "{:.0f}",
+                    "HR": "{:.0f}",
+                    "BA": "{:.3f}",
+                    "OBP": "{:.3f}",
+                    "SLG": "{:.3f}",
+                    "OPS": "{:.3f}",
+                    "wOBA": "{:.3f}",
+                    "K Rate (%)": "{:.1f}",
+                    "BB Rate (%)": "{:.1f}"
+                })
+            )
+
     # (insert existing Plate Discipline code, using pd_data)
 
     # --- Batted Ball Direction Table ---
