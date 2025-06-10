@@ -1222,8 +1222,8 @@ else:
                                   df_player_filtered[df_player_filtered["PitchCall"]=="InPlay"].shape[0]*100,1
                               ) if total_all>0 else np.nan,
             "GB%":             round(gb_all, 1),  # leave blank or compute similarly if you want
-            "LD%":             round(gb_all, 1,
-            "FB%":             round(gb_all, 1,
+            "LD%":             round(gb_all, 1),
+            "FB%":             round(gb_all, 1),
             "RV/100":          round(df_player_filtered["run_value"].sum()/total_all*100,1) if total_all>0 else np.nan
         }
 
