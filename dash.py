@@ -204,17 +204,46 @@ if position == "Batter":
         
         
         st.subheader("Plate Discipline")
-    
-        # --- Revised Plate Discipline Calculations for Hitters Using Pitch-Level Data ---
-        # Use full pitch-level data (all pitches, not just PA outcomes)
+
+# Base pitch-level df
         pitch_data = batter_data.copy()
-        discipline_option = st.selectbox("Plate Discipline - Filter By Pitcher Handedness", ["Combined", "Left", "Right"])
+
+# ——— Filters side-by-side ———
+        col1, col2 = st.columns(2)
+        with col1:
+            discipline_option = st.selectbox(
+                "Plate Discipline - Filter By Pitcher Handedness",
+                ["Combined", "Left", "Right"]
+            )
+        with col2:
+            count_options = [
+                "0 Strikes", "1 Strike", "2 Strikes",
+                "0 Balls",   "1 Ball",   "2 Balls",   "3 Balls"
+            ]
+            selected_counts = st.multiselect(
+                "Plate Discipline - Filter By Count",
+                count_options,
+                default=count_options
+            )
+
+# ——— Apply handedness filter ———
+        pd_data = pitch_data.copy()
         if discipline_option == "Left":
-            pd_data = pitch_data[pitch_data["PitcherThrows"] == "Left"].copy()
+            pd_data = pd_data[pd_data["PitcherThrows"] == "Left"]
         elif discipline_option == "Right":
-            pd_data = pitch_data[pitch_data["PitcherThrows"] == "Right"].copy()
-        else:
-            pd_data = pitch_data.copy()
+            pd_data = pd_data[pd_data["PitcherThrows"] == "Right"]
+
+# ——— Apply count filter ———
+        strike_counts = [int(s.split()[0]) for s in selected_counts if "Strike" in s]
+        ball_counts   = [int(s.split()[0]) for s in selected_counts if "Ball"  in s]
+
+        pd_data = pd_data[
+            pd_data["Strikes"].isin(strike_counts) |
+            pd_data["Balls"].isin(ball_counts)
+        ]
+
+# …now use pd_data for all your swing%, whiff%, etc. calculations…
+
     
         # Define strike zone boundaries.
         strike_zone = {"x_min": -0.83, "x_max": 0.83, "z_min": 1.5, "z_max": 3.5}
