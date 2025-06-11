@@ -1136,7 +1136,7 @@ if position == "Batter":
                 vals.append(v)
 
     # --- 6) Draw pockets ---
-            fig, ax = plt.subplots(figsize=(4,4))
+            fig, ax = plt.subplots(figsize=(2,2))
             cmap = cm.get_cmap("Reds")
             mn, mx = np.nanmin(vals), np.nanmax(vals)
             for reg, v in zip(regions, vals):
