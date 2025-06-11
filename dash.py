@@ -60,7 +60,7 @@ if position == "Batter":
     st.header("Hitters Section")
     
     # Create tabs for the hitter section: Data, Heatmaps, Visuals, Models.
-    tabs = st.tabs(["Data", "Heatmaps", "Visuals", "Pitch Level Analyzer", "Hit Zones"])
+    tabs = st.tabs(["Data", "Heatmaps", "Visuals", "Pitch Level Analyzer"])
     
     with tabs[0]:
         st.subheader("2025 Hitting Data")
