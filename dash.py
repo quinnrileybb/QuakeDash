@@ -58,7 +58,7 @@ if position == "Batter":
     st.header("Hitters Section")
     
     # Create tabs for the hitter section: Data, Heatmaps, Visuals, Models.
-    tabs = st.tabs(["Data", "Heatmaps", "Visuals", "Pitch Level Analyzer", "Postgame Report"])
+    tabs = st.tabs(["Data", "Heatmaps", "Visuals", "Pitch Level Analyzer", "Hit Zones"])
     
     with tabs[0]:
         st.subheader("2025 Hitting Data")
@@ -1020,174 +1020,116 @@ if position == "Batter":
                 "Hard Hit%":"{:.1f}",
                 "wOBAcon":"{:.3f}"
             }))
+        
+        with tabs[4]:
+            st.header("Hit Zones")
+    # 1) Filters
+            c1, c2, c3, c4 = st.columns([2,1,1,1])
+            with c1:
+                metric_options = [
+                    "Pitch%", "Swing%", "Whiff%", "wOBAcon",
+                    "Hard Hit%", "Avg EV", "90th % EV", "Max EV"
+                ]
+                selected_metric = st.selectbox("Metric", metric_options)
+            with c2:
+                hex_sizes = [10,20,30,40,50]
+                selected_size = st.selectbox("Hexbin Size", hex_sizes, index=1)
+            with c3:
+                count_opts      = ["0 Strikes","1 Strike","2 Strikes","0 Balls","1 Ball","2 Balls","3 Balls"]
+                selected_counts = st.multiselect("Count", count_opts, default=count_opts)
+                sc = [int(x.split()[0]) for x in selected_counts if "Strike" in x]
+                bc = [int(x.split()[0]) for x in selected_counts if "Ball"   in x]
+            with c4:
+                throws_opts     = ["Combined","Left","Right"]
+                selected_throws = st.selectbox("Pitcher Throws", throws_opts)
+                type_opts       = ["Overall","Fastball","Breaking Ball","Offspeed","92+","High Spin"]
+                selected_type   = st.selectbox("Pitch Type", type_opts)
 
+    # 2) Build df_hz
+            df_hz = batter_data.copy()
+            if sc or bc:
+                df_hz = df_hz[df_hz["Strikes"].isin(sc) & df_hz["Balls"].isin(bc)]
+            if selected_throws=="Left":
+                df_hz = df_hz[df_hz["PitcherThrows"]=="Left"]
+            elif selected_throws=="Right":
+                df_hz = df_hz[df_hz["PitcherThrows"]=="Right"]
+            if selected_type=="Fastball":
+                df_hz = df_hz[(df_hz["AutoPitchType"].isin(["Four-Seam","Sinker"]))|(df_hz["RelSpeed"]>85)]
+            elif selected_type=="Breaking Ball":
+                df_hz = df_hz[df_hz["AutoPitchType"].isin(["Slider","Curveball","Cutter"])]
+            elif selected_type=="Offspeed":
+                df_hz = df_hz[df_hz["AutoPitchType"].isin(["Splitter","Changeup"])]
+            elif selected_type=="92+":
+                df_hz = df_hz[df_hz["RelSpeed"]>=92]
+            elif selected_type=="High Spin":
+                df_hz = df_hz[df_hz["SpinRate"]>2400]
 
+    # 3) Prepare C-array
+            total = len(df_hz)
+            swing_set = {"StrikeSwinging","InPlay","FoulBallFieldable","FoulBallNotFieldable","FoulBall"}
+            woba_wts  = {'Out':0,'Walk':0.69,'HitByPitch':0.72,'Single':0.88,'Double':1.247,'Triple':1.578,'HomeRun':2.031}
 
+            if selected_metric == "Pitch%":
+        # percent of total pitches
+                C = None
+                reduce_fn = len
+                post_norm = True  # divide by total*100
+                cbar_label = "Pitch %"
+            else:
+        # compute per-row values
+                df_hz["_C"] = {
+                    "Swing%":    df_hz["PitchCall"].isin(swing_set).astype(int),
+                    "Whiff%":    (df_hz["PitchCall"]=="StrikeSwinging").astype(int),
+                    "wOBAcon":   df_hz["PlayResultCleaned"].map(lambda x: woba_wts.get(x,0)),
+                    "Hard Hit%": (df_hz["ExitSpeed"]>=95).astype(int),
+                    "Avg EV":    df_hz["ExitSpeed"].fillna(np.nan),
+                    "90th % EV": df_hz["ExitSpeed"].fillna(np.nan),
+                    "Max EV":    df_hz["ExitSpeed"].fillna(np.nan)
+                }[selected_metric]
+                C = df_hz["_C"]
+                reduce_fn = np.mean
+                post_norm = selected_metric.endswith("%")  # multiply mean by 100
+                cbar_label = selected_metric
 
+    # 4) Hexbin plot
+            st.subheader(f"{selected_metric} Hexbin")
+            fig, ax = plt.subplots(figsize=(6,6))
+
+            hb = ax.hexbin(
+                df_hz["PlateLocSide"],
+                df_hz["PlateLocHeight"],
+                C=C,
+                reduce_C_function=reduce_fn,
+                gridsize=selected_size,
+                cmap="Reds",
+                mincnt=1
+            )
+
+    # Normalize & colorbar
+            vals = hb.get_array().astype(float)
+            if selected_metric == "Pitch%":
+                vals = vals/total*100
+            elif post_norm:
+                vals = vals*100
+            hb.set_array(vals)
+            fig.colorbar(hb, ax=ax, label=cbar_label)
+
+    # overlay strike zone
+            from matplotlib.patches import Rectangle
+            sz = Rectangle((-0.83,1.5),1.66,2.0,fill=False,edgecolor="black",linewidth=2)
+            ax.add_patch(sz)
+
+            ax.set_xlim(-2,2)
+            ax.set_ylim(0.5,5)
+            ax.set_xticks([]); ax.set_yticks([])
+            st.pyplot(fig)
+            
 
 
 
         
-        with tabs[4]:
-            st.header("Hitter Postgame Report")
 
-    # Prepare data
-            data = batter_data.copy()
-            data['Date'] = pd.to_datetime(data['Date'], errors='coerce').dt.strftime('%Y-%m-%d')
-            unique_dates = sorted(data['Date'].dropna().unique())
-            default_date = unique_dates[-1] if unique_dates else None
-            selected_date = st.selectbox(
-                "Select a Date",
-                options=unique_dates,
-                index=unique_dates.index(default_date) if default_date else 0
-            )
-            filtered_data = data[data['Date'] == selected_date] if selected_date else data
-            batters = sorted(filtered_data['Batter'].unique())
-            selected_batter = st.selectbox("Select a Batter", batters)
-            if selected_batter:
-                filtered_data = filtered_data[filtered_data['Batter'] == selected_batter]
-
-            if not filtered_data.empty:
-                from matplotlib.gridspec import GridSpec
-
-        # Group by plate appearance
-                pa_groups = filtered_data.groupby((filtered_data['PitchofPA'] == 1).cumsum())
-
-        # Build figure + GridSpec
-                fig = plt.figure(figsize=(15, 8.5))
-                gs  = GridSpec(3, 5, figure=fig,
-                               width_ratios =[1.5,1.5,1.5,1,1.5],
-                               height_ratios=[1,1,1])
-                gs.update(wspace=0.2, hspace=0.3)
-
-        # Create the 3×3 axes for the first 9 PAs
-                axes = []
-                for i in range(min(len(pa_groups), 9)):
-                    ax = fig.add_subplot(gs[i//3, i%3])
-                    ax.set_xlim(-1.5, 1.5)
-                    ax.set_ylim(1, 4)
-                    ax.set_xticks([]); ax.set_yticks([])
-                    ax.set_aspect(1)
-                    axes.append(ax)
-
-        # Build table data
-                table_data = []
-
-        # Palettes & markers
-                pitch_call_palette = {
-                    'StrikeCalled':'orange','BallCalled':'green','BallinDirt':'green',
-                    'Foul':'tan','InPlay':'blue','StrikeSwinging':'red',
-                    'BallIntentional':'purple','HitByPitch':'lime'
-                }
-                pitch_type_markers = {
-                    'Fastball':'o','Curveball':'s','Slider':'^','Changeup':'D'
-                }
-
-        # Plot each PA
-                for i, (pa_id, pa) in enumerate(pa_groups, start=1):
-                    if i > 9: break
-                    ax = axes[i-1]
-            # Annotate title and pitcher
-                    side = 'RHP' if pa.iloc[0]['PitcherThrows']=='Right' else 'LHP'
-                    name = pa.iloc[0]['Pitcher']
-                    ax.set_title(f'PA {i} vs {side}', fontsize=14, fontweight='bold')
-                    ax.text(0.5, -0.12, f'P: {name}',
-                            fontsize=10, fontstyle='italic',
-                            ha='center', transform=ax.transAxes)
-
-            # Draw strike, heart, and shadow zones
-                    sz_w = 17/12
-                    zones = {
-                        'shadow':(-sz_w/2-0.2,1.3,sz_w+0.4,3.6-1.3,'gray','--'),
-                        'strike':(-sz_w/2,1.5,sz_w,3.3775-1.5,'black','-'),
-                        'heart': ( -sz_w/2+sz_w*0.25, 
-                                   1.5 + (3.3775-1.5)*0.25,
-                                   sz_w*0.5,(3.3775-1.5)*0.5,
-                                   'red','--')
-                    }
-                    for x,y,w,h,c,ls in zones.values():
-                        ax.add_patch(plt.Rectangle((x,y),w,h,fill=False,edgecolor=c,linestyle=ls,linewidth=2))
-
-            # Collect pitch rows
-                    pa_rows = []
-                    for _, r in pa.iterrows():
-                        sns.scatterplot(
-                            x=[r['PlateLocSide']],
-                            y=[r['PlateLocHeight']],
-                            hue=[r['PitchCall']],
-                            palette=pitch_call_palette,
-                            marker=pitch_type_markers.get(r['AutoPitchType'],'o'),
-                            s=150, legend=False, ax=ax
-                        )
-                        offset = -0.05 if r['AutoPitchType']=='Slider' else 0
-                        ax.text(r['PlateLocSide'], r['PlateLocHeight']+offset,
-                                str(int(r['PitchofPA'])),
-                                color='white', fontsize=8,
-                                ha='center', va='center', weight='bold')
-
-                # Only label outcome on last pitch
-                        if r.name == pa.index[-1]:
-                            outcome = next((x for x in [r['PlayResult'],r['KorBB'],r['PitchCall']] if x!="Undefined"), "Undefined")
-                        else:
-                            outcome = r['PitchCall']
-                        speed = f"{round(r['RelSpeed'],1)} MPH"
-                        ptype = r['AutoPitchType']
-                        pa_rows.append([f"Pitch {int(r['PitchofPA'])}", f"{speed} {ptype}", outcome])
-
-                    table_data.append([f"PA {i}", "", ""])
-                    table_data.extend(pa_rows)
-
-        # Legends
-                legend_ax = fig.add_subplot(gs[2, :2])
-                legend_ax.axis('off')
-                h1 = [plt.Line2D([0],[0],marker='o',color='w',markerfacecolor=c,markersize=6,label=l)
-                      for l,c in pitch_call_palette.items()]
-                l1 = legend_ax.legend(handles=h1, title='Pitch Call',
-                                     loc='lower left', bbox_to_anchor=(1,-0.3),
-                                     fontsize=10, title_fontsize=12)
-                h2 = [plt.Line2D([0],[0],marker=m,color='black',
-                                 markersize=6,linestyle='',label=l)
-                      for l,m in pitch_type_markers.items()]
-                l2 = legend_ax.legend(handles=h2, title='Pitch Type',
-                                     loc='lower left', bbox_to_anchor=(0.6,-0.3),
-                                     fontsize=10, title_fontsize=12)
-                legend_ax.add_artist(l1)
-
-        # Table panel
-                ax_table = fig.add_subplot(gs[:, 3:])
-                ax_table.axis('off')
-                y = 1.0; x = 0.05
-                for row in table_data:
-                    if row[0].startswith("PA"):
-                        ax_table.text(x, y, row[0], fontsize=10,
-                                      fontweight='bold', fontstyle='italic')
-                        ax_table.axhline(y-0.01, color='black', linewidth=1)
-                        y -= 0.05
-                    else:
-                        text = f"  {row[0]}  |  {row[1]}  |  {row[2]}"
-                        ax_table.text(x, y, text, fontsize=7)
-                        y -= 0.04
-
-        # Title and postgame stats line
-                fig.suptitle(f"{selected_batter} Report for {selected_date}",
-                             fontsize=18, weight='bold')
-                whiffs    = filtered_data['PitchCall'].eq('StrikeSwinging').sum()
-                hard_hits = filtered_data.query("PitchCall=='InPlay' and ExitSpeed>=95").shape[0]
-                barrels   = filtered_data.query("ExitSpeed>=95 and Angle.between(10,35)").shape[0]
-                swing_calls = ["Foul","InPlay","StrikeSwinging","FoulBallFieldable","FoulBallNotFieldable"]
-                chase_count = filtered_data.query("PitchCall in @swing_calls").loc[
-                    lambda d: ~d["PlateLocSide"].between(-0.7083,0.7083) |
-                      ~d["PlateLocHeight"].between(1.5,3.3775)
-                ].shape[0]
-                fig.text(0.5, 0.93,
-                         f"Whiffs: {whiffs}    Hard Hits: {hard_hits}    Barrels: {barrels}    Chase: {chase_count}",
-                         fontsize=12, ha='center')
-
-                st.pyplot(fig)
-            else:
-                st.write("No data available for the selected filters.")
-
-
+    
 else:
     # Create tabs for the Pitcher section.
     tabs = st.tabs(["Data", "Heatmaps", "Visuals", "Pitch Analyzer"])
