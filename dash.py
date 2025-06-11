@@ -1138,10 +1138,10 @@ if position == "Batter":
                             reg["xmax"]-reg["xmin"],
                             reg["ymax"]-reg["ymin"],
                             facecolor=color, edgecolor="black")
-                ax.add_patch(rect)
-                ax.text((reg["xmin"]+reg["xmax"])/2,
-                        (reg["ymin"]+reg["ymax"])/2,
-                        f"{v:.1f}", ha="center", va="center", fontsize=6, color="white")
+             ax.add_patch(rect)
+             ax.text((reg["xmin"]+reg["xmax"])/2,
+                    (reg["ymin"]+reg["ymax"])/2,
+                    f"{v:.1f}", ha="center", va="center", fontsize=6, color="white")
 
     # strike zone outline
         sz = Rectangle((-0.83,1.5), 1.66, 2.0,
