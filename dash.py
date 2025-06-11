@@ -1101,57 +1101,57 @@ if position == "Batter":
                     df_hz["PlateLocHeight"].between(reg["ymin"], reg["ymax"], inclusive="left")
                 ]
             if selected_metric == "Pitch%":
-                    v = len(sub)/total_pts*100 if total_pts>0 else np.nan
-                elif selected_metric == "Swing%":
-                    swings = sub["PitchCall"].isin(swing_set).sum()
-                    v = swings/len(sub)*100 if len(sub)>0 else np.nan
-                elif selected_metric == "Whiff%":
-                    swing_mask = sub["PitchCall"].isin(swing_set)
-                    whiff_mask = sub["PitchCall"] == "StrikeSwinging"
-                    arr = np.where(swing_mask, whiff_mask.astype(int), np.nan)
-                    v = np.nanmean(arr)*100 if swing_mask.any() else np.nan
-                elif selected_metric == "wOBAcon":
-                    ip = sub[sub["PitchCall"]=="InPlay"]
-                    wobs = ip["PlayResultCleaned"].map(lambda x: woba_wts.get(x,0))
-                    v = wobs.mean() if not wobs.empty else np.nan
-                elif selected_metric == "Hard Hit%":
-                    arr = (sub["ExitSpeed"] >= 95).astype(int)
-                    v = arr.mean()*100 if len(arr)>0 else np.nan
-                elif selected_metric == "Avg EV":
-                    v = sub["ExitSpeed"].mean() if not sub["ExitSpeed"].dropna().empty else np.nan
-                elif selected_metric == "90th % EV":
-                    evs = sub["ExitSpeed"].dropna()
-                    v = np.percentile(evs, 90) if len(evs)>0 else np.nan
-                else:  # "Max EV"
-                    evs = sub["ExitSpeed"].dropna()
-                    v = evs.max() if len(evs)>0 else np.nan
-                vals.append(v)
+                v = len(sub)/total_pts*100 if total_pts>0 else np.nan
+            elif selected_metric == "Swing%":
+                swings = sub["PitchCall"].isin(swing_set).sum()
+                v = swings/len(sub)*100 if len(sub)>0 else np.nan
+            elif selected_metric == "Whiff%":
+                swing_mask = sub["PitchCall"].isin(swing_set)
+                whiff_mask = sub["PitchCall"] == "StrikeSwinging"
+                arr = np.where(swing_mask, whiff_mask.astype(int), np.nan)
+                v = np.nanmean(arr)*100 if swing_mask.any() else np.nan
+            elif selected_metric == "wOBAcon":
+                ip = sub[sub["PitchCall"]=="InPlay"]
+                wobs = ip["PlayResultCleaned"].map(lambda x: woba_wts.get(x,0))
+                v = wobs.mean() if not wobs.empty else np.nan
+            elif selected_metric == "Hard Hit%":
+                arr = (sub["ExitSpeed"] >= 95).astype(int)
+                v = arr.mean()*100 if len(arr)>0 else np.nan
+            elif selected_metric == "Avg EV":
+                v = sub["ExitSpeed"].mean() if not sub["ExitSpeed"].dropna().empty else np.nan
+            elif selected_metric == "90th % EV":
+                evs = sub["ExitSpeed"].dropna()
+                v = np.percentile(evs, 90) if len(evs)>0 else np.nan
+            else:  # "Max EV"
+                evs = sub["ExitSpeed"].dropna()
+                v = evs.max() if len(evs)>0 else np.nan
+            vals.append(v)
 
     # --- 6) Draw pockets ---
-            fig, ax = plt.subplots(figsize=(4,4))
-            cmap = cm.get_cmap("Reds")
-            mn, mx = np.nanmin(vals), np.nanmax(vals)
-            for reg, v in zip(regions, vals):
-                frac = (v-mn)/(mx-mn) if mx>mn and not np.isnan(v) else 0
-                color = cmap(frac)
-                rect = Rectangle((reg["xmin"], reg["ymin"]),
-                                 reg["xmax"]-reg["xmin"],
-                                 reg["ymax"]-reg["ymin"],
-                                 facecolor=color, edgecolor="black")
+        fig, ax = plt.subplots(figsize=(4,4))
+        cmap = cm.get_cmap("Reds")
+        mn, mx = np.nanmin(vals), np.nanmax(vals)            
+        for reg, v in zip(regions, vals):
+             frac = (v-mn)/(mx-mn) if mx>mn and not np.isnan(v) else 0
+             color = cmap(frac)
+             rect = Rectangle((reg["xmin"], reg["ymin"]),
+                            reg["xmax"]-reg["xmin"],
+                            reg["ymax"]-reg["ymin"],
+                            facecolor=color, edgecolor="black")
                 ax.add_patch(rect)
                 ax.text((reg["xmin"]+reg["xmax"])/2,
                         (reg["ymin"]+reg["ymax"])/2,
                         f"{v:.1f}", ha="center", va="center", fontsize=6, color="white")
 
     # strike zone outline
-            sz = Rectangle((-0.83,1.5), 1.66, 2.0,
-                           fill=False, edgecolor="black", linewidth=2)
-            ax.add_patch(sz)
+        sz = Rectangle((-0.83,1.5), 1.66, 2.0,
+                       fill=False, edgecolor="black", linewidth=2)
+        ax.add_patch(sz)
 
-            ax.set_xlim(-1.2,1.2)
-            ax.set_ylim(1,4)
-            ax.set_xticks([]); ax.set_yticks([])
-            st.pyplot(fig)
+        ax.set_xlim(-1.2,1.2)
+        ax.set_ylim(1,4)
+        ax.set_xticks([]); ax.set_yticks([])
+        st.pyplot(fig)
 
 
     
