@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from matplotlib.patches import Rectangle
 import seaborn as sns
 
 df = pd.read_csv('penn__5_2__.csv')
