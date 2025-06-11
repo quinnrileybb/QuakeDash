@@ -1023,8 +1023,8 @@ if position == "Batter":
         
 
         from matplotlib.patches import Rectangle
-import matplotlib.cm as cm
-import numpy as np
+        import matplotlib.cm as cm
+        import numpy as np
 
         with tabs[4]:
             st.header("Hit Zones")
