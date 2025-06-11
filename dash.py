@@ -1021,9 +1021,11 @@ if position == "Batter":
                 "wOBAcon":"{:.3f}"
             }))
         
+
         with tabs[4]:
             st.header("Hit Zones")
-    # 1) Filters
+
+    # --- Filters ---
             c1, c2, c3, c4 = st.columns([2,1,1,1])
             with c1:
                 metric_options = [
@@ -1032,102 +1034,112 @@ if position == "Batter":
                 ]
                 selected_metric = st.selectbox("Metric", metric_options)
             with c2:
-                hex_sizes = [10,20,30,40,50]
+                hex_sizes = [7, 5, 3]
                 selected_size = st.selectbox("Hexbin Size", hex_sizes, index=1)
             with c3:
                 count_opts      = ["0 Strikes","1 Strike","2 Strikes","0 Balls","1 Ball","2 Balls","3 Balls"]
-                selected_counts = st.multiselect("Count", count_opts, default=count_opts)
+                selected_counts = st.multiselect("Count", count_opts, default=count_opts, key="hz_counts")
                 sc = [int(x.split()[0]) for x in selected_counts if "Strike" in x]
                 bc = [int(x.split()[0]) for x in selected_counts if "Ball"   in x]
             with c4:
                 throws_opts     = ["Combined","Left","Right"]
-                selected_throws = st.selectbox("Pitcher Throws", throws_opts)
+                selected_throws = st.selectbox("Pitcher Throws", throws_opts, key="hz_throws")
                 type_opts       = ["Overall","Fastball","Breaking Ball","Offspeed","92+","High Spin"]
-                selected_type   = st.selectbox("Pitch Type", type_opts)
+                selected_type   = st.selectbox("Pitch Type", type_opts, key="hz_type")
 
-    # 2) Build df_hz
+    # --- Build filtered DataFrame ---
             df_hz = batter_data.copy()
             if sc or bc:
                 df_hz = df_hz[df_hz["Strikes"].isin(sc) & df_hz["Balls"].isin(bc)]
-            if selected_throws=="Left":
-                df_hz = df_hz[df_hz["PitcherThrows"]=="Left"]
-            elif selected_throws=="Right":
-                df_hz = df_hz[df_hz["PitcherThrows"]=="Right"]
-            if selected_type=="Fastball":
-                df_hz = df_hz[(df_hz["AutoPitchType"].isin(["Four-Seam","Sinker"]))|(df_hz["RelSpeed"]>85)]
-            elif selected_type=="Breaking Ball":
+            if selected_throws == "Left":
+                df_hz = df_hz[df_hz["PitcherThrows"] == "Left"]
+            elif selected_throws == "Right":
+                df_hz = df_hz[df_hz["PitcherThrows"] == "Right"]
+            if selected_type == "Fastball":
+                df_hz = df_hz[(df_hz["AutoPitchType"].isin(["Four-Seam","Sinker"])) | (df_hz["RelSpeed"]>85)]
+            elif selected_type == "Breaking Ball":
                 df_hz = df_hz[df_hz["AutoPitchType"].isin(["Slider","Curveball","Cutter"])]
-            elif selected_type=="Offspeed":
+            elif selected_type == "Offspeed":
                 df_hz = df_hz[df_hz["AutoPitchType"].isin(["Splitter","Changeup"])]
-            elif selected_type=="92+":
-                df_hz = df_hz[df_hz["RelSpeed"]>=92]
-            elif selected_type=="High Spin":
-                df_hz = df_hz[df_hz["SpinRate"]>2400]
+            elif selected_type == "92+":
+                df_hz = df_hz[df_hz["RelSpeed"] >= 92]
+            elif selected_type == "High Spin":
+                df_hz = df_hz[df_hz["SpinRate"] > 2400]
 
-    # 3) Prepare C-array
-            total = len(df_hz)
+    # --- Prepare metric arrays ---
             swing_set = {"StrikeSwinging","InPlay","FoulBallFieldable","FoulBallNotFieldable","FoulBall"}
             woba_wts  = {'Out':0,'Walk':0.69,'HitByPitch':0.72,'Single':0.88,'Double':1.247,'Triple':1.578,'HomeRun':2.031}
+            total_pts = len(df_hz)
 
             if selected_metric == "Pitch%":
-        # percent of total pitches
                 C = None
                 reduce_fn = len
-                post_norm = True  # divide by total*100
+                normalize = lambda a: a/total_pts*100
                 cbar_label = "Pitch %"
-            else:
-        # compute per-row values
-                df_hz["_C"] = {
-                    "Swing%":    df_hz["PitchCall"].isin(swing_set).astype(int),
-                    "Whiff%":    (df_hz["PitchCall"]=="StrikeSwinging").astype(int),
-                    "wOBAcon":   df_hz["PlayResultCleaned"].map(lambda x: woba_wts.get(x,0)),
-                    "Hard Hit%": (df_hz["ExitSpeed"]>=95).astype(int),
-                    "Avg EV":    df_hz["ExitSpeed"].fillna(np.nan),
-                    "90th % EV": df_hz["ExitSpeed"].fillna(np.nan),
-                    "Max EV":    df_hz["ExitSpeed"].fillna(np.nan)
-                }[selected_metric]
-                C = df_hz["_C"]
+            elif selected_metric == "Swing%":
+                C = df_hz["PitchCall"].isin(swing_set).astype(int)
                 reduce_fn = np.mean
-                post_norm = selected_metric.endswith("%")  # multiply mean by 100
-                cbar_label = selected_metric
+                normalize = lambda a: a*100
+                cbar_label = "Swing %"
+            elif selected_metric == "Whiff%":
+        # whiff rate = whiffs / swings per hex
+                swing_mask = df_hz["PitchCall"].isin(swing_set)
+                whiff_mask = df_hz["PitchCall"] == "StrikeSwinging"
+                C = np.where(swing_mask, whiff_mask.astype(int), np.nan)
+                reduce_fn = np.nanmean
+                normalize = lambda a: a*100
+                cbar_label = "Whiff %"
+            elif selected_metric == "wOBAcon":
+                C = df_hz["PlayResultCleaned"].map(lambda x: woba_wts.get(x,0))
+                reduce_fn = np.mean
+                normalize = lambda a: a
+                cbar_label = "wOBAcon"
+            elif selected_metric == "Hard Hit%":
+                C = (df_hz["ExitSpeed"] >= 95).astype(int)
+                reduce_fn = np.mean
+                normalize = lambda a: a*100
+                cbar_label = "Hard Hit %"
+            elif selected_metric == "Avg EV":
+                C = df_hz["ExitSpeed"].fillna(np.nan)
+                reduce_fn = np.mean
+                normalize = lambda a: a
+                cbar_label = "Avg EV"
+            elif selected_metric == "90th % EV":
+                C = df_hz["ExitSpeed"].fillna(np.nan)
+                reduce_fn = lambda a: np.nanpercentile(a, 90)
+                normalize = lambda a: a
+                cbar_label = "90th % EV"
+            else:  # "Max EV"
+                C = df_hz["ExitSpeed"].fillna(np.nan)
+                reduce_fn = np.max
+                normalize = lambda a: a
+                cbar_label = "Max EV"
 
-    # 4) Hexbin plot
+    # --- Plot hexbin with values ---
             st.subheader(f"{selected_metric} Hexbin")
-            fig, ax = plt.subplots(figsize=(6,6))
-
+            fig, ax = plt.subplots(figsize=(4,4))
             hb = ax.hexbin(
-                df_hz["PlateLocSide"],
-                df_hz["PlateLocHeight"],
-                C=C,
-                reduce_C_function=reduce_fn,
+                df_hz["PlateLocSide"], df_hz["PlateLocHeight"],
+                C=C, reduce_C_function=reduce_fn,
                 gridsize=selected_size,
-                cmap="Reds",
-                mincnt=1
+                cmap="Reds", mincnt=1,
+                extent=[-1.2,1.2,1,4]
             )
-
-    # Normalize & colorbar
-            vals = hb.get_array().astype(float)
-            if selected_metric == "Pitch%":
-                vals = vals/total*100
-            elif post_norm:
-                vals = vals*100
+            vals = normalize(hb.get_array().astype(float))
             hb.set_array(vals)
-            fig.colorbar(hb, ax=ax, label=cbar_label)
+
+    # annotate hex centers
+            for (x_off, y_off), val in zip(hb.get_offsets(), vals):
+                ax.text(x_off, y_off, f"{val:.1f}", ha="center", va="center", fontsize=6, color="white")
 
     # overlay strike zone
-            from matplotlib.patches import Rectangle
             sz = Rectangle((-0.83,1.5),1.66,2.0,fill=False,edgecolor="black",linewidth=2)
             ax.add_patch(sz)
 
-            ax.set_xlim(-2,2)
-            ax.set_ylim(0.5,5)
+            ax.set_xlim(-1.2,1.2)
+            ax.set_ylim(1,4)
             ax.set_xticks([]); ax.set_yticks([])
             st.pyplot(fig)
-            
-
-
-
-        
 
     
 else:
