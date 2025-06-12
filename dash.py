@@ -1641,11 +1641,22 @@ else:
             df_event = row_filters[selected_map](df_player)
 
     # Top 5 most-thrown pitch types
-            top5 = df_player["AutoPitchType"]\
-              .value_counts().index.to_list()[:5]
 
-    # Create 1×5 grid of KDE heatmaps
-            fig, axs = plt.subplots(1, len(top5), figsize=(len(top5)*3, 3), constrained_layout=True)
+        top5 = df_player["AutoPitchType"].value_counts().index.to_list()[:5]
+
+        if not top5:
+            st.info("No pitch types available for these filters.")
+        else:
+            fig, axs = plt.subplots(
+                1,
+                len(top5),
+                figsize=(len(top5)*3, 3),
+                constrained_layout=True
+            )
+    # If there's only one column, axs is a single Axes object, so:
+            if len(top5) == 1:
+                axs = [axs]
+
             for i, pt in enumerate(top5):
                 ax = axs[i]
                 cell = df_event[df_event["AutoPitchType"] == pt][["PlateLocSide","PlateLocHeight"]].dropna()
@@ -1658,13 +1669,13 @@ else:
                         ax=ax, fill=True, cmap="Reds",
                         bw_adjust=0.5, levels=5, thresh=0.05
                     )
-        # draw strike zone
                 ax.add_patch(Rectangle((-0.83, 1.5), 1.66, 2.0,
                                        fill=False, edgecolor="black", linewidth=2))
                 ax.set(xlim=(-2.5,2.5), ylim=(0.5,5), xticks=[], yticks=[])
                 ax.set_title(pt, fontsize=10)
 
             st.pyplot(fig)
+
 
         # Visuals Tab
         # -------------------------
