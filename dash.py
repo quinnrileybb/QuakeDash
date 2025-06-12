@@ -1606,10 +1606,9 @@ else:
                 df_event = df_h
             elif map_sel == "Whiffs":
                 df_event = df_h[df_h["PitchCall"] == "StrikeSwinging"]
-            elif map_sel == "Whiffs + Hard Hit":
-                w = df_h["PitchCall"] == "StrikeSwinging"
+            elif map_sel == "Hard Hit":
                 hh = (df_h["PitchCall"] == "InPlay") & (df_h["ExitSpeed"] >= 95)
-                df_event = df_h[w | hh]
+                df_event = df_h[hh]
             elif map_sel == "Softly Hit":
                 df_event = df_h[(df_h["PitchCall"] == "InPlay") & (df_h["ExitSpeed"] < 80)]
             elif map_sel == "Chases":
