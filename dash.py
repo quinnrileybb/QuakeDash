@@ -1593,13 +1593,13 @@ else:
                     "0 Strikes", "1 Strike", "2 Strikes",
                     "0 Balls",   "1 Ball",   "2 Balls",   "3 Balls"
                 ]
-                selected_counts = st.multiselect("Filter by Count", count_options, default=count_options)
+                selected_counts = st.multiselect("Filter by Count", count_options, default=count_options, key="pitcher_counts")
             with col2:
                 handed_opts = ["Overall", "RHP", "LHP"]
-                handed_sel = st.selectbox("Filter by Batter Handedness", handed_opts)
+                handed_sel = st.selectbox("Filter by Batter Handedness", handed_opts, key="pitcher_handed")
             with col3:
                 map_opts = ["All Pitches", "Whiffs", "Hard Hit", "Softly Hit", "Chases", "Called Strikes"]
-                map_sel  = st.selectbox("Select Heatmap", map_opts)
+                map_sel  = st.selectbox("Select Heatmap", map_opts, key="pitcher_heatmap_type")
 
         # — apply count filter (OR logic so any matching strike OR ball) —
             strike_counts = [int(x.split()[0]) for x in selected_counts if "Strike" in x]
