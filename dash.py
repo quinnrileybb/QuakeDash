@@ -1583,78 +1583,86 @@ else:
             st.header("Heatmaps")
             st.markdown("#### Pitch Heatmaps by Category")
 
-        # ——— Base DataFrame ———
-            df_player = pitcher_data.copy().dropna(subset=["PlateLocSide", "PlateLocHeight"])
+    # Base df for the selected pitcher
+            df_player = pitcher_data.copy().dropna(subset=["PlateLocSide","PlateLocHeight"])
 
-        # ——— Filters ———
+    # ——— Filters ———
             col1, col2, col3 = st.columns(3)
             with col1:
-                count_options = [
-                    "0 Strikes", "1 Strike", "2 Strikes",
-                    "0 Balls",   "1 Ball",   "2 Balls",   "3 Balls"
+                count_opts = [
+                    "0 Strikes","1 Strike","2 Strikes",
+                    "0 Balls","1 Ball","2 Balls","3 Balls"
                 ]
-                selected_counts = st.multiselect("Filter by Count", count_options, default=count_options, key="pitcher_counts")
+                selected_counts = st.multiselect(
+                    "Filter by Count",
+                    count_opts,
+                    default=count_opts,
+                    key="pitcher_counts"        # ← unique key
+                )
             with col2:
-                handed_opts = ["Overall", "RHP", "LHP"]
-                handed_sel = st.selectbox("Filter by Batter Handedness", handed_opts, key="pitcher_handed")
+                throws_opts = ["Combined","Left","Right"]
+                selected_throws = st.selectbox(
+                    "Pitcher Throws",
+                    throws_opts,
+                    key="pitcher_throws"        # ← unique key
+                )
             with col3:
-                map_opts = ["All Pitches", "Whiffs", "Hard Hit", "Softly Hit", "Chases", "Called Strikes"]
-                map_sel  = st.selectbox("Select Heatmap", map_opts, key="pitcher_heatmap_type")
+                map_opts = ["All Pitches","Whiffs","Hard Hit","Softly Hit","Chases","Called Strikes"]
+                selected_map = st.selectbox(
+                    "Select Heatmap",
+                    map_opts,
+                    key="pitcher_map"           # ← unique key
+                )
 
-        # — apply count filter (OR logic so any matching strike OR ball) —
-            strike_counts = [int(x.split()[0]) for x in selected_counts if "Strike" in x]
-            ball_counts   = [int(x.split()[0]) for x in selected_counts if "Ball"   in x]
-            df_player = df_player[
-                df_player["Strikes"].isin(strike_counts) |
-                df_player["Balls"].isin(ball_counts)
-            ]
+    # apply count filter
+            sc = [int(x.split()[0]) for x in selected_counts if "Strike" in x]
+            bc = [int(x.split()[0]) for x in selected_counts if "Ball"   in x]
+            if sc or bc:
+                df_player = df_player[df_player["Strikes"].isin(sc) & df_player["Balls"].isin(bc)]
 
-        # — apply handedness filter —
-            if handed_sel == "RHP":
-                df_player = df_player[df_player["BatterSide"] == "Right"]
-            elif handed_sel == "LHP":
-                df_player = df_player[df_player["BatterSide"] == "Left"]
+    # apply pitcher-throws filter
+            if selected_throws == "Left":
+                df_player = df_player[df_player["PitcherThrows"] == "Left"]
+            elif selected_throws == "Right":
+                df_player = df_player[df_player["PitcherThrows"] == "Right"]
 
-        # — define which events go in each heatmap —
-            swing_set = {"StrikeSwinging", "InPlay", "FoulBallFieldable", "FoulBallNotFieldable", "FoulBall"}
+    # define which events to include in the heatmap
+            swing_set = {"StrikeSwinging","InPlay","FoulBallFieldable","FoulBallNotFieldable","FoulBall"}
             row_filters = {
-                "All Pitches":    lambda df: df,
-                "Whiffs":         lambda df: df[df["PitchCall"] == "StrikeSwinging"],
-                "Hard Hit":       lambda df: df[(df["PitchCall"]=="InPlay") & (df["ExitSpeed"]>95)],
-                "Softly Hit":     lambda df: df[(df["PitchCall"]=="InPlay") & (df["ExitSpeed"]<80)],
-                "Chases":         lambda df: df[
-                                      df["PitchCall"].isin(swing_set) &
-                                      ~((df["PlateLocSide"].between(-0.83,0.83)) &
-                                        (df["PlateLocHeight"].between(1.5,3.5)))
-                                  ],
-                "Called Strikes": lambda df: df[df["PitchCall"] == "StrikeCalled"]
+                "All Pitches":    lambda d: d,
+                "Whiffs":         lambda d: d[d["PitchCall"] == "StrikeSwinging"],
+                "Hard Hit":       lambda d: d[(d["PitchCall"] == "InPlay") & (d["ExitSpeed"] > 95)],
+                "Softly Hit":     lambda d: d[(d["PitchCall"] == "InPlay") & (d["ExitSpeed"] < 80)],
+                "Chases":         lambda d: d[swing_set.__contains__(d["PitchCall"]) &
+                                             ~((d["PlateLocSide"].between(-0.83,0.83)) &
+                                               (d["PlateLocHeight"].between(1.5,3.5)))],
+                "Called Strikes": lambda d: d[d["PitchCall"] == "StrikeCalled"],
             }
-            df_event = row_filters[map_sel](df_player)
+            df_event = row_filters[selected_map](df_player)
 
-        # — now facet by pitch-category exactly like the hitter tab —
-            col_filters = {
-                "Overall":      lambda d: d,
-                "Fastball":     lambda d: d[(d["AutoPitchType"].isin(["Four-Seam","Sinker"])) | (d["RelSpeed"]>85)],
-                "Breaking Ball":lambda d: d[d["AutoPitchType"].isin(["Slider","Curveball","Cutter"])],
-                "Offspeed":     lambda d: d[d["AutoPitchType"].isin(["Splitter","Changeup"])]
-            }
-            col_names = list(col_filters.keys())
+    # Top 5 most-thrown pitch types
+            top5 = df_player["AutoPitchType"]\
+              .value_counts().index.to_list()[:5]
 
-            fig, axs = plt.subplots(1, len(col_names), figsize=(len(col_names)*3, 3), constrained_layout=True)
-            for ax, cat in zip(axs, col_names):
-                cell = col_filters[cat](df_event)[["PlateLocSide","PlateLocHeight"]].dropna().astype(float)
+    # Create 1×5 grid of KDE heatmaps
+            fig, axs = plt.subplots(1, len(top5), figsize=(len(top5)*3, 3), constrained_layout=True)
+            for i, pt in enumerate(top5):
+                ax = axs[i]
+                cell = df_event[df_event["AutoPitchType"] == pt][["PlateLocSide","PlateLocHeight"]].dropna()
                 if len(cell) < 3:
                     ax.text(0.5, 0.5, "No Data", ha="center", va="center", transform=ax.transAxes)
                 else:
                     sns.kdeplot(
-                        data=cell, x="PlateLocSide", y="PlateLocHeight",
-                        ax=ax, fill=True, cmap="Reds", bw_adjust=0.5, levels=5, thresh=0.05
+                        data=cell,
+                        x="PlateLocSide", y="PlateLocHeight",
+                        ax=ax, fill=True, cmap="Reds",
+                        bw_adjust=0.5, levels=5, thresh=0.05
                     )
-            # draw strike zone
-                rect = Rectangle((-0.83, 1.5), 1.66, 2.0, fill=False, edgecolor="black", linewidth=2)
-                ax.add_patch(rect)
-                ax.set(xlim=(-2.5,2.5), ylim=(0.5,5), xticks=[], yticks=[], xlabel="", ylabel="")
-                ax.set_title(cat, fontsize=10)
+        # draw strike zone
+                ax.add_patch(Rectangle((-0.83, 1.5), 1.66, 2.0,
+                                       fill=False, edgecolor="black", linewidth=2))
+                ax.set(xlim=(-2.5,2.5), ylim=(0.5,5), xticks=[], yticks=[])
+                ax.set_title(pt, fontsize=10)
 
             st.pyplot(fig)
 
