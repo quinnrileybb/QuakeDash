@@ -1580,101 +1580,79 @@ else:
         from matplotlib.patches import Rectangle
 
         with tabs[1]:
-            st.header("Heatmaps")
-            st.markdown("#### Pitch Heatmaps by Category")
+            st.header("Pitch Location Heatmaps by Category")
 
-    # Base df for the selected pitcher
-            df_player = pitcher_data.copy().dropna(subset=["PlateLocSide","PlateLocHeight"])
-
-    # ——— Filters ———
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                count_opts = [
-                    "0 Strikes","1 Strike","2 Strikes",
-                    "0 Balls","1 Ball","2 Balls","3 Balls"
-                ]
-                selected_counts = st.multiselect(
-                    "Filter by Count",
-                    count_opts,
-                    default=count_opts,
-                    key="pitcher_counts"        # ← unique key
-                )
-            with col2:
-                throws_opts = ["Combined","Left","Right"]
-                selected_throws = st.selectbox(
-                    "Pitcher Throws",
-                    throws_opts,
-                    key="pitcher_throws"        # ← unique key
-                )
-            with col3:
-                map_opts = ["All Pitches","Whiffs","Hard Hit","Softly Hit","Chases","Called Strikes"]
-                selected_map = st.selectbox(
-                    "Select Heatmap",
-                    map_opts,
-                    key="pitcher_map"           # ← unique key
-                )
-
-    # apply count filter
+    # — Filters (give each widget a unique key) —
+            count_opts = ["0 Strikes","1 Strike","2 Strikes","0 Balls","1 Ball","2 Balls","3 Balls"]
+            selected_counts = st.multiselect("Filter by Count", count_opts, default=count_opts, key="heat_counts")
             sc = [int(x.split()[0]) for x in selected_counts if "Strike" in x]
             bc = [int(x.split()[0]) for x in selected_counts if "Ball"   in x]
+
+            throws_opts = ["Combined","Left","Right"]
+            throws_sel = st.selectbox("Filter by Pitcher Throws", throws_opts, key="heat_throws")
+
+            map_types = ["All Pitches","Whiffs","Whiffs + Hard Hit","Softly Hit","Chases","Called Strikes"]
+            map_sel = st.selectbox("Select Heatmap", map_types, key="heat_map_type")
+
+    # — Apply filters to df_player —
+            df_h = df_player.copy()
             if sc or bc:
-                df_player = df_player[df_player["Strikes"].isin(sc) & df_player["Balls"].isin(bc)]
+                df_h = df_h[df_h["Strikes"].isin(sc) & df_h["Balls"].isin(bc)]
+            if throws_sel != "Combined":
+                df_h = df_h[df_h["PitcherThrows"] == throws_sel]
 
-    # apply pitcher-throws filter
-            if selected_throws == "Left":
-                df_player = df_player[df_player["PitcherThrows"] == "Left"]
-            elif selected_throws == "Right":
-                df_player = df_player[df_player["PitcherThrows"] == "Right"]
+    # — Define the event subset for each map type —
+            if map_sel == "All Pitches":
+                df_event = df_h
+            elif map_sel == "Whiffs":
+                df_event = df_h[df_h["PitchCall"] == "StrikeSwinging"]
+            elif map_sel == "Whiffs + Hard Hit":
+                w = df_h["PitchCall"] == "StrikeSwinging"
+                hh = (df_h["PitchCall"] == "InPlay") & (df_h["ExitSpeed"] >= 95)
+                df_event = df_h[w | hh]
+            elif map_sel == "Softly Hit":
+                df_event = df_h[(df_h["PitchCall"] == "InPlay") & (df_h["ExitSpeed"] < 80)]
+            elif map_sel == "Chases":
+                swing_set = {"StrikeSwinging","InPlay","FoulBallFieldable","FoulBallNotFieldable","FoulBall"}
+                in_zone = df_h["PlateLocSide"].between(-0.83,0.83) & df_h["PlateLocHeight"].between(1.5,3.5)
+                df_event = df_h[df_h["PitchCall"].isin(swing_set) & ~in_zone]
+            else:  # Called Strikes
+                df_event = df_h[df_h["PitchCall"] == "StrikeCalled"]
 
-    # define which events to include in the heatmap
-            swing_set = {"StrikeSwinging","InPlay","FoulBallFieldable","FoulBallNotFieldable","FoulBall"}
-            row_filters = {
-                "All Pitches":    lambda d: d,
-                "Whiffs":         lambda d: d[d["PitchCall"] == "StrikeSwinging"],
-                "Hard Hit":       lambda d: d[(d["PitchCall"] == "InPlay") & (d["ExitSpeed"] > 95)],
-                "Softly Hit":     lambda d: d[(d["PitchCall"] == "InPlay") & (d["ExitSpeed"] < 80)],
-                "Chases":         lambda d: d[swing_set.__contains__(d["PitchCall"]) &
-                                             ~((d["PlateLocSide"].between(-0.83,0.83)) &
-                                               (d["PlateLocHeight"].between(1.5,3.5)))],
-                "Called Strikes": lambda d: d[d["PitchCall"] == "StrikeCalled"],
-            }
-            df_event = row_filters[selected_map](df_player)
+    # — Top-5 pitch types —
+            top5 = df_event["AutoPitchType"].value_counts().index.tolist()[:5]
 
-    # Top 5 most-thrown pitch types
-
-            top5 = df_player["AutoPitchType"].value_counts().index.to_list()[:5]
-
-            if not top5:
-                st.info("No pitch types available for these filters.")
-            else:
-                fig, axs = plt.subplots(
-                    1,
-                    len(top5),
-                    figsize=(len(top5)*3, 3),
-                    constrained_layout=True
-                )
-    # If there's only one column, axs is a single Axes object, so:
-                if len(top5) == 1:
-                    axs = [axs]
-
-                for i, pt in enumerate(top5):
-                    ax = axs[i]
-                    cell = df_event[df_event["AutoPitchType"] == pt][["PlateLocSide","PlateLocHeight"]].dropna()
-                    if len(cell) < 3:
-                        ax.text(0.5, 0.5, "No Data", ha="center", va="center", transform=ax.transAxes)
+    # — Render five small plots in their own columns —
+            cols = st.columns(5)
+            for i, col in enumerate(cols):
+                with col:
+                    if i < len(top5):
+                        pt = top5[i]
+                        subset = df_event[df_event["AutoPitchType"] == pt]
+                        fig, ax = plt.subplots(figsize=(3, 3))
+                        if len(subset) < 3:
+                            ax.text(0.5, 0.5, "No Data", ha="center", va="center", transform=ax.transAxes)
+                        else:
+                            sns.kdeplot(
+                                x=subset["PlateLocSide"],
+                                y=subset["PlateLocHeight"],
+                                fill=True,
+                                levels=5,
+                                thresh=0.05,
+                                bw_adjust=0.5,
+                                cmap="Reds",
+                                ax=ax
+                            )
+                # draw strike zone
+                        ax.add_patch(Rectangle((-0.83, 1.5), 1.66, 2.0,
+                                               fill=False, edgecolor="black", linewidth=2))
+                        ax.set_xlim(-2.5, 2.5)
+                        ax.set_ylim(0.5, 5)
+                        ax.set_xticks([]); ax.set_yticks([])
+                        ax.set_title(pt, fontsize=10)
+                        st.pyplot(fig)
                     else:
-                        sns.kdeplot(
-                            data=cell,
-                            x="PlateLocSide", y="PlateLocHeight",
-                            ax=ax, fill=True, cmap="Reds",
-                            bw_adjust=0.5, levels=5, thresh=0.05
-                        )
-                    ax.add_patch(Rectangle((-0.83, 1.5), 1.66, 2.0,
-                                           fill=False, edgecolor="black", linewidth=2))
-                    ax.set(xlim=(-2.5,2.5), ylim=(0.5,5), xticks=[], yticks=[])
-                    ax.set_title(pt, fontsize=10)
-
-                st.pyplot(fig)
+                        col.empty()
 
 
         # Visuals Tab
