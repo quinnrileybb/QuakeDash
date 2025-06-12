@@ -1589,7 +1589,7 @@ else:
             bc = [int(x.split()[0]) for x in selected_counts if "Ball"   in x]
 
             throws_opts = ["Combined","Left","Right"]
-            throws_sel = st.selectbox("Filter by Pitcher Throws", throws_opts, key="heat_throws")
+            throws_sel = st.selectbox("Filter by Batter Handedness", throws_opts, key="heat_throws")
 
             map_types = ["All Pitches","Whiffs","Whiffs + Hard Hit","Softly Hit","Chases","Called Strikes"]
             map_sel = st.selectbox("Select Heatmap", map_types, key="heat_map_type")
@@ -1599,7 +1599,7 @@ else:
             if sc or bc:
                 df_h = df_h[df_h["Strikes"].isin(sc) & df_h["Balls"].isin(bc)]
             if throws_sel != "Combined":
-                df_h = df_h[df_h["PitcherThrows"] == throws_sel]
+                df_h = df_h[df_h["BatterSide"] == throws_sel]
 
     # — Define the event subset for each map type —
             if map_sel == "All Pitches":
