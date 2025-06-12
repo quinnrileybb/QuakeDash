@@ -1650,6 +1650,8 @@ else:
                         ax.set_ylim(0.5, 5)
                         ax.set_xticks([]); ax.set_yticks([])
                         ax.set_title(pt, fontsize=10)
+                        ax.set_xlabel("")   
+                        ax.set_ylabel("") 
                         st.pyplot(fig)
                     else:
                         col.empty()
