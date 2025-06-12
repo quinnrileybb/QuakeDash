@@ -53,6 +53,22 @@ with col3:
 
 st.write(f"You selected Team: **{selected_team}**, Position: **{position}**, Player: **{selected_player}**")
 
+if position == "Batter":
+    # Determine and display the batter’s handedness
+    sides = (
+        df.loc[df["Batter"] == selected_player, "BatterSide"]
+          .dropna()
+          .unique()
+          .tolist()
+    )
+    if len(sides) == 1:
+        handed = sides[0]  # “Left” or “Right”
+    elif len(sides) > 1:
+        handed = "Switch"
+    else:
+        handed = "Unknown"
+    st.write(f"**Batter Handedness:** {handed}")
+
 # -------------------------
 # Branch: If Batter, show In Progress; if Pitcher, show full section.
 # -------------------------
