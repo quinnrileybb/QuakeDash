@@ -69,6 +69,20 @@ if position == "Batter":
         handed = "Unknown"
     st.write(f"**Batter Handedness:** {handed}")
 
+elif position == "Pitcher":
+    throws = (
+        df.loc[df["Pitcher"] == selected_player, "PitcherThrows"]
+          .dropna().unique().tolist()
+    )
+    # (almost always length‐1, but just in case…)
+    if len(throws) == 1:
+        pt_hand = throws[0]        # "Left" or "Right"
+    elif len(throws) > 1:
+        pt_hand = "Ambidextrous"
+    else:
+        pt_hand = "Unknown"
+    st.write(f"**Pitcher Throws:** {pt_hand}")
+
 # -------------------------
 # Branch: If Batter, show In Progress; if Pitcher, show full section.
 # -------------------------
