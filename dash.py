@@ -1591,7 +1591,7 @@ else:
             throws_opts = ["Combined","Left","Right"]
             throws_sel = st.selectbox("Filter by Batter Handedness", throws_opts, key="heat_throws")
 
-            map_types = ["All Pitches","Whiffs","Whiffs + Hard Hit","Softly Hit","Chases","Called Strikes"]
+            map_types = ["All Pitches","Whiffs","Hard Hit","Softly Hit","Chases","Called Strikes"]
             map_sel = st.selectbox("Select Heatmap", map_types, key="heat_map_type")
 
     # — Apply filters to df_player —
